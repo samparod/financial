@@ -1,18 +1,17 @@
 import fs from "fs";
 import path from "path";
+import { Pool } from "pg";
 import { SEED } from "./seed";
 import type { AppState } from "./types";
 
 const FILE = path.join(process.cwd(), "data", "state.json");
 
-type Pool = import("pg").Pool;
 let pool: Pool | null = null;
 
 async function getPool() {
   const url = process.env.DATABASE_URL;
   if (!url) return null;
   if (!pool) {
-    const { Pool } = await import("pg");
     pool = new Pool({ connectionString: url });
     await pool.query(`
       CREATE TABLE IF NOT EXISTS app_state (

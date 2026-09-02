@@ -2,24 +2,36 @@
 
 Web dashboard + Telegram bot (`@financial2025_bot`) for Gulf / Algeria COD accounts. Same data on the site and in Telegram. Postgres in production.
 
-## EasyPanel
+## EasyPanel · samparo.pro
 
-1. Create app from GitHub: `samparod/financial`
-2. Build: **Dockerfile** (port **3000**)
-3. Add a **PostgreSQL** service and attach it
-4. Environment:
+Proxy:
 
-| Key | Value |
-|-----|--------|
-| `DATABASE_URL` | Postgres URL from EasyPanel |
-| `TELEGRAM_BOT_TOKEN` | from BotFather |
-| `TELEGRAM_ALLOW_IDS` | your Telegram numeric id (optional) |
-| `WEBAPP_URL` | `https://your-domain` |
-| `WEBHOOK_URL` | `https://your-domain` |
+- Host: `samparo.pro`
+- Path: `/`
+- Destination: **HTTP** · port **3000** · path `/`
 
-5. After the first deploy, open `https://your-domain/api/telegram` once to register the webhook.
+Build from GitHub `samparod/financial` with the **Dockerfile**.
 
-Do not put `.env` or the bot token in git.
+Environment (paste in EasyPanel, not in git):
+
+```
+PORT=3000
+HOSTNAME=0.0.0.0
+DATABASE_URL=postgres://USER:PASSWORD@financial_financial:5432/financial?sslmode=disable
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_ALLOW_IDS=
+WEBAPP_URL=https://samparo.pro
+WEBHOOK_URL=https://samparo.pro
+```
+
+Use the Postgres URL EasyPanel gives you for this app (internal host like `financial_financial`).
+
+After deploy, open once:
+
+- https://samparo.pro/api/health
+- https://samparo.pro/api/telegram
+
+That creates the table and registers the Telegram webhook.
 
 ## Local
 
@@ -29,8 +41,6 @@ npm run dev
 ```
 
 Site: http://localhost:3070
-
-Telegram polling (site must be running):
 
 ```
 npm run bot
