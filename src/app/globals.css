@@ -1,0 +1,33 @@
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #070b14;
+  color: #e8eef8;
+  font-family: Cairo, system-ui, sans-serif;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.4;
+}
+
+.sheet-input {
+  @apply w-full bg-[#0b1220] border border-line rounded px-2 py-1.5 text-sm text-white outline-none focus:border-gold;
+}
+
+.card {
+  @apply bg-panel border border-line rounded-xl;
+}
+
+.kpi-label {
+  @apply text-[11px] tracking-wide text-mute;
+}

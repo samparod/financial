@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: lmofid
+      POSTGRES_PASSWORD: lmofid
+      POSTGRES_DB: lmofid
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lmofid"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    ports:
+      - "3070:3000"
+    environment:
+      DATABASE_URL: postgres://lmofid:lmofid@db:5432/lmofid
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_ALLOW_IDS: ${TELEGRAM_ALLOW_IDS}
+      WEBAPP_URL: ${WEBAPP_URL}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
