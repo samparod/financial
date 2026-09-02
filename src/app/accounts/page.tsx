@@ -94,7 +94,7 @@ export default function AccountsPage() {
   const colW = Math.max(120, Math.min(160, 900 / Math.max(rows.length, 1)));
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="lg:p-8">
       <PageHead
         kicker="PROFIT & LOST"
         title={t("sheet.title")}

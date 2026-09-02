@@ -17,7 +17,7 @@ export default function StabilityPage() {
   const currency = region === "gulf" ? "SAR" : "DZD";
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl">
+    <div className="lg:p-8 max-w-6xl">
       <PageHead
         kicker="CALCULATOR"
         title={t("calc.title")}

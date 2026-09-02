@@ -41,7 +41,7 @@ export default function AlgeriaPage() {
   );
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="lg:p-8">
       <PageHead
         kicker="ALGERIA · USD + DZD"
         title={t("dz.title")}

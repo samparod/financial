@@ -26,7 +26,7 @@ export default function SimulatorPage() {
   const cod = usd * 0.05;
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl">
+    <div className="lg:p-8 max-w-4xl">
       <PageHead
         kicker="SELLING PRICE"
         title={t("sim.title")}

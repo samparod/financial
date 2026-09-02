@@ -9,6 +9,15 @@ export const metadata: Metadata = {
   description: "نظام إدارة حسابات COD للخليج والجزائر",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover" as const,
+  themeColor: "#070b14",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl">

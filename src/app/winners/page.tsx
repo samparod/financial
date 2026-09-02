@@ -35,7 +35,7 @@ export default function WinnersPage() {
   );
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="lg:p-8">
       <PageHead
         kicker="WINNING PRODUCTS"
         title={t("win.title")}

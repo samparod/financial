@@ -25,7 +25,7 @@ export default function RoadmapPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="lg:p-8">
       <PageHead
         kicker="THE PATH"
         title={t("road.title")}

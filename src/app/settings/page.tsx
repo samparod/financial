@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const a = s.settings.algeriaFeesUsd;
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl">
+    <div className="lg:p-8 max-w-4xl">
       <PageHead
         kicker="SETTINGS"
         title={t("set.title")}

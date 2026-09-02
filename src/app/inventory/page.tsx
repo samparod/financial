@@ -22,7 +22,7 @@ export default function InventoryPage() {
   const items = s.stock.filter((x) => region === "all" || x.region === region);
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="lg:p-8">
       <PageHead
         kicker="INVENTORY"
         title={t("inv.title")}

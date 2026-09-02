@@ -29,7 +29,7 @@ export default function HomePage() {
   const winners = s.winners.filter((w) => w.status === "winner").length;
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="lg:p-8">
       <PageHead kicker="STABILITY COD" title={t("home.title")} desc={t("home.desc")} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">

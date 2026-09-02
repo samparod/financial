@@ -37,7 +37,7 @@ export default function GulfPage() {
   );
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="lg:p-8">
       <PageHead kicker="GULF ACCOUNTS" title={t("gulf.title")} desc={t("sheet.formula")} />
 
       <div className="flex flex-wrap gap-2 mb-6">

@@ -42,7 +42,7 @@ export default function CashflowPage() {
   }, [rows, fx]);
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="lg:p-8">
       <PageHead
         kicker="CASH FLOW"
         title={t("cf.title")}

@@ -14,13 +14,13 @@ export function PageHead({
   extra?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
-      <div>
-        {kicker && <div className="text-[11px] text-gold tracking-widest mb-1">{kicker}</div>}
-        <h1 className="text-2xl font-extrabold">{title}</h1>
-        {desc && <p className="text-sm text-mute mt-1 max-w-2xl">{desc}</p>}
+    <div className="flex flex-wrap items-end justify-between gap-3 mb-4 lg:mb-6">
+      <div className="min-w-0">
+        {kicker && <div className="text-[10px] lg:text-[11px] text-gold tracking-widest mb-1">{kicker}</div>}
+        <h1 className="text-xl lg:text-2xl font-extrabold leading-tight">{title}</h1>
+        {desc && <p className="hidden sm:block text-sm text-mute mt-1 max-w-2xl">{desc}</p>}
       </div>
-      {extra}
+      {extra && <div className="w-full sm:w-auto flex flex-wrap gap-2">{extra}</div>}
     </div>
   );
 }
@@ -49,7 +49,7 @@ export function Kpi({
   return (
     <div className="card p-4">
       <div className="kpi-label">{label}</div>
-      <div className={cls("text-2xl font-extrabold mt-1 tabular-nums", color)}>{value}</div>
+      <div className={cls("text-lg lg:text-2xl font-extrabold mt-1 tabular-nums", color)}>{value}</div>
       {hint && <div className="text-xs text-mute mt-1">{hint}</div>}
     </div>
   );
