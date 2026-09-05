@@ -5,6 +5,7 @@ import { useCod } from "@/lib/store";
 import { stockPath } from "@/lib/cod";
 import { cls } from "@/lib/format";
 import { PageHead } from "@/components/ui";
+import { Explain, Tip } from "@/components/Explain";
 import { useT } from "@/lib/lang";
 
 export default function RoadmapPage() {
@@ -45,7 +46,10 @@ export default function RoadmapPage() {
         }
       />
 
+      <Explain id="road.page" />
+
       <div className="card p-5 mb-6">
+        <Explain id="road.timeline" />
         <div className="flex justify-between text-sm text-mute mb-4">
           <span>Day 1 · مخزون {item.qty}</span>
           <span>{item.dailySales} قطعة / يوم</span>
@@ -92,6 +96,7 @@ export default function RoadmapPage() {
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="card p-5">
           <h2 className="font-bold mb-3">تقويم {monthName(today)}</h2>
+          <Explain id="road.calendar" open={false} />
           <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-mute mb-1">
             {["أحد", "إثن", "ثلا", "أرب", "خمي", "جمع", "سبت"].map((d) => (
               <div key={d}>{d}</div>
@@ -134,13 +139,16 @@ export default function RoadmapPage() {
               {path.orderByDay < 1
                 ? "فات وقت الطلب الآمن. اطلب اليوم حتى لو وصل بعد النفاد."
                 : `آخر يوم آمن للطلب هو اليوم ${path.orderByDay} حتى تصل الشحنة قبل الصفر.`}
+              <Tip id="road.orderDay" />
             </li>
             <li>
               <b>Stock 0.</b> القوس يصل للصفر يوم {path.stockZeroDay}. بعدها المبيعات تتوقف.
+              <Tip id="road.zero" />
             </li>
             <li>
               <b>وصول شحنة اليوم.</b> إذا طلبت الآن من علي بابا، الوصول بعد {item.leadTimeDays} يوم
               (إنتاج + شحن + جمارك).
+              <Tip id="road.arrival" />
             </li>
           </ol>
         </div>

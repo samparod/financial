@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SEED } from "./seed";
+import { landedCost } from "./cod";
 import type {
   AlibabaShipment,
   AppState,
@@ -32,6 +33,7 @@ interface Store extends AppState {
   removeCash: (id: string) => void;
   setShip: (id: string, p: Partial<AlibabaShipment>) => void;
   addShip: (region: Region) => void;
+  receiveShip: (id: string) => void;
   removeShip: (id: string) => void;
   setWinner: (id: string, p: Partial<WinningProduct>) => void;
   addWinner: (region: Region) => void;
@@ -49,7 +51,18 @@ export const useCod = create<Store>()(
       ...SEED,
       hydrated: false,
       setHydrated: (v) => set({ hydrated: v }),
-      patchSettings: (p) => set((s) => ({ settings: { ...s.settings, ...p } })),
+      patchSettings: (p) =>
+        set((s) => ({
+          settings: { ...s.settings, ...p },
+          ...(p.usdToDzd != null
+            ? {
+                stability: {
+                  ...s.stability,
+                  algeria: { ...s.stability.algeria, fxToUsd: p.usdToDzd },
+                },
+              }
+            : {}),
+        })),
       setPl: (id, p) =>
         set((s) => ({
           plProducts: s.plProducts.map((x) => (x.id === id ? { ...x, ...p } : x)),
@@ -146,6 +159,56 @@ export const useCod = create<Store>()(
             },
           ],
         })),
+      receiveShip: (id) =>
+        set((s) => {
+          const ship = s.shipments.find((x) => x.id === id);
+          if (!ship || ship.status === "in_stock") return {};
+          const L = landedCost(ship);
+          const name = ship.productName.trim() || "منتج";
+          const match = s.stock.find(
+            (x) => x.region === ship.region && (x.name === name || x.sku === name)
+          );
+          const shipments = s.shipments.map((x) =>
+            x.id === id ? { ...x, status: "in_stock" as const } : x
+          );
+          if (match) {
+            return {
+              shipments,
+              stock: s.stock.map((x) =>
+                x.id === match.id
+                  ? {
+                      ...x,
+                      qty: x.qty + ship.qty,
+                      unitCostUsd: L.perUnit,
+                      updatedAt: new Date().toISOString().slice(0, 10),
+                    }
+                  : x
+              ),
+            };
+          }
+          return {
+            shipments,
+            stock: [
+              ...s.stock,
+              {
+                id: uid(),
+                region: ship.region,
+                country: ship.region === "algeria" ? "DZ" : "KSA",
+                name,
+                sku: name,
+                qty: ship.qty,
+                dailySales: 5,
+                leadTimeDays: ship.productionDays + ship.transitDays,
+                bufferDays: 5,
+                unitCostUsd: L.perUnit,
+                sellingPrice: 0,
+                currency: ship.region === "algeria" ? "DZD" : "USD",
+                warehouse: ship.destination,
+                updatedAt: new Date().toISOString().slice(0, 10),
+              },
+            ],
+          };
+        }),
       removeShip: (id) => set((s) => ({ shipments: s.shipments.filter((x) => x.id !== id) })),
       setWinner: (id, p) =>
         set((s) => ({
@@ -190,8 +253,8 @@ export const useCod = create<Store>()(
         shipments: s.shipments,
         winners: s.winners,
       }),
-      onRehydrateStorage: () => (state) => {
-        state?.setHydrated(true);
+      onRehydrateStorage: () => () => {
+        /* hydrated after server sync */
       },
     }
   )

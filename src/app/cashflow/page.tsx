@@ -4,9 +4,19 @@ import { useMemo, useState } from "react";
 import { useCod } from "@/lib/store";
 import { calcPl, opsTotal } from "@/lib/cod";
 import { money } from "@/lib/format";
-import { Badge, Btn, Num, PageHead, TextField } from "@/components/ui";
+import { Badge, Btn, Kpi, Num, PageHead, TextField } from "@/components/ui";
+import { Explain, LabelHelp } from "@/components/Explain";
 import { useT } from "@/lib/lang";
 import type { CashEntry, Currency, Region } from "@/lib/types";
+
+const CAT_HELP: Record<string, string> = {
+  cod: "cf.cod",
+  ads: "cf.ads",
+  product: "cf.product",
+  shipping: "cf.shipping",
+  ops: "cf.ops",
+  other: "cf.other",
+};
 
 export default function CashflowPage() {
   const { t } = useT();
@@ -55,11 +65,13 @@ export default function CashflowPage() {
         }
       />
 
+      <Explain id="cf.page" />
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Box k="دخول" v={money(inflow)} c="text-profit" />
-        <Box k="خروج" v={money(outflow)} c="text-danger" />
-        <Box k="صافي الكاش" v={money(net)} c={net >= 0 ? "text-profit" : "text-danger"} />
-        <Box k="ربح P&L − تشغيل" v={money(plProfit - opsTotal(ops))} c="text-gold" />
+        <Kpi label="دخول" value={money(inflow)} tone="good" help="cf.in" />
+        <Kpi label="خروج" value={money(outflow)} tone="bad" help="cf.out" />
+        <Kpi label="صافي الكاش" value={money(net)} tone={net >= 0 ? "good" : "bad"} help="cf.net" />
+        <Kpi label="ربح P&L − تشغيل" value={money(plProfit - opsTotal(ops))} tone="gold" help="cf.plGap" />
       </div>
       {region === "algeria" && (
         <p className="text-sm text-mute mb-4">
@@ -71,17 +83,20 @@ export default function CashflowPage() {
         <div className="card p-5">
           <h2 className="font-bold mb-3">حركة جديدة</h2>
           <div className="space-y-3">
-            <TextField label="البيان" value={draft.label} onChange={(v) => setDraft({ ...draft, label: v })} />
-            <Num label="المبلغ" value={draft.amount} onChange={(n) => setDraft({ ...draft, amount: n })} />
-            <label className="block text-[11px] text-mute">
-              التاريخ
-              <input
-                type="date"
-                className="sheet-input mt-1"
-                value={draft.date}
-                onChange={(e) => setDraft({ ...draft, date: e.target.value })}
-              />
-            </label>
+            <TextField label="البيان" value={draft.label} onChange={(v) => setDraft({ ...draft, label: v })} help="cf.label" />
+            <Num label="المبلغ" value={draft.amount} onChange={(n) => setDraft({ ...draft, amount: n })} help="cf.amount" />
+            <LabelHelp id="cf.date">
+              <label className="block text-[11px] text-mute">
+                التاريخ
+                <input
+                  type="date"
+                  className="sheet-input mt-1"
+                  value={draft.date}
+                  onChange={(e) => setDraft({ ...draft, date: e.target.value })}
+                />
+              </label>
+            </LabelHelp>
+            <Explain id="cf.type" open={false} />
             <div className="grid grid-cols-2 gap-2">
               <select
                 className="sheet-input"
@@ -105,14 +120,14 @@ export default function CashflowPage() {
               </select>
             </div>
             <select
-              className="sheet-input"
-              value={draft.currency}
-              onChange={(e) => setDraft({ ...draft, currency: e.target.value as Currency })}
-            >
-              <option value="USD">دولار</option>
-              <option value="DZD">دينار</option>
-              <option value="SAR">ريال</option>
-            </select>
+                className="sheet-input"
+                value={draft.currency}
+                onChange={(e) => setDraft({ ...draft, currency: e.target.value as Currency })}
+              >
+                <option value="USD">دولار</option>
+                <option value="DZD">دينار</option>
+                <option value="SAR">ريال</option>
+              </select>
             <Btn
               tone="gold"
               onClick={() => {
@@ -127,12 +142,15 @@ export default function CashflowPage() {
         </div>
         <div className="card p-5 lg:col-span-2">
           <h2 className="font-bold mb-3">حسب التصنيف</h2>
+          <Explain id="cf.byCat" open={false} />
           <div className="space-y-2">
             {byCat.map(([k, v]) => (
-              <div key={k} className="flex justify-between text-sm border-b border-line py-2">
-                <span className="text-mute">{k}</span>
-                <span className={v >= 0 ? "text-profit" : "text-danger"}>{money(v)}</span>
-              </div>
+              <LabelHelp id={CAT_HELP[k] ?? "cf.other"} key={k}>
+                <div className="flex justify-between text-sm border-b border-line py-2">
+                  <span className="text-mute">{t(`cf.cat.${k}`)}</span>
+                  <span className={v >= 0 ? "text-profit" : "text-danger"}>{money(v)}</span>
+                </div>
+              </LabelHelp>
             ))}
           </div>
           <p className="text-xs text-mute mt-4">
@@ -173,15 +191,6 @@ export default function CashflowPage() {
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-function Box({ k, v, c }: { k: string; v: string; c: string }) {
-  return (
-    <div className="card p-4">
-      <div className="text-[11px] text-mute">{k}</div>
-      <div className={`text-2xl font-extrabold mt-1 tabular-nums ${c}`}>{v}</div>
     </div>
   );
 }

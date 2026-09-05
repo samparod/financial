@@ -5,6 +5,7 @@ import { useCod } from "@/lib/store";
 import { sellingPriceUsd } from "@/lib/cod";
 import { money } from "@/lib/format";
 import { Badge, Btn, Num, PageHead, TextField } from "@/components/ui";
+import { Explain, LabelHelp, Tip } from "@/components/Explain";
 import { useT } from "@/lib/lang";
 import type { Region, TestStatus } from "@/lib/types";
 
@@ -16,13 +17,17 @@ const STATUSES: { id: TestStatus; ar: string; tone: "neutral" | "warn" | "good" 
   { id: "hold", ar: "معلّقة", tone: "gold" },
 ];
 
-const CRITERIA: { key: "wow" | "problem" | "competition" | "perceivedValue" | "scalability" | "availability"; ar: string }[] = [
-  { key: "problem", ar: "يحل مشكلة" },
-  { key: "wow", ar: "Wow Factor" },
-  { key: "availability", ar: "صعب تلقاها في المحل" },
-  { key: "competition", ar: "منافسة ضعيفة" },
-  { key: "perceivedValue", ar: "قيمة مدركة عالية" },
-  { key: "scalability", ar: "قابل للتوسع" },
+const CRITERIA: {
+  key: "wow" | "problem" | "competition" | "perceivedValue" | "scalability" | "availability";
+  ar: string;
+  help: string;
+}[] = [
+  { key: "problem", ar: "يحل مشكلة", help: "win.problem" },
+  { key: "wow", ar: "Wow Factor", help: "win.wow" },
+  { key: "availability", ar: "صعب تلقاها في المحل", help: "win.availability" },
+  { key: "competition", ar: "منافسة ضعيفة", help: "win.competition" },
+  { key: "perceivedValue", ar: "قيمة مدركة عالية", help: "win.value" },
+  { key: "scalability", ar: "قابل للتوسع", help: "win.scale" },
 ];
 
 export default function WinnersPage() {
@@ -46,6 +51,7 @@ export default function WinnersPage() {
           </div>
         }
       />
+      <Explain id="win.page" />
 
       <div className="flex flex-wrap gap-2 mb-5">
         {(["all", "gulf", "algeria"] as const).map((r) => (
@@ -81,37 +87,45 @@ export default function WinnersPage() {
                 <Badge tone={st.tone}>{st.ar}</Badge>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <TextField label="النيش" value={w.niche} onChange={(v) => s.setWinner(w.id, { niche: v })} />
-                <select
-                  className="sheet-input mt-5"
-                  value={w.status}
-                  onChange={(e) => s.setWinner(w.id, { status: e.target.value as TestStatus })}
-                >
-                  {STATUSES.map((x) => (
-                    <option key={x.id} value={x.id}>{x.ar}</option>
-                  ))}
-                </select>
-                <Num label="سعر الصين $" value={w.chinaPrice} onChange={(n) => s.setWinner(w.id, { chinaPrice: n })} step={0.01} />
-                <Num label="سعر البيع $" value={w.sellingPrice} onChange={(n) => s.setWinner(w.id, { sellingPrice: n })} step={0.1} />
-                <Num label="الوزن كغ" value={w.weightKg} onChange={(n) => s.setWinner(w.id, { weightKg: n })} step={0.01} />
-                <TextField label="رابط" value={w.alibabaUrl} onChange={(v) => s.setWinner(w.id, { alibabaUrl: v })} />
+                <TextField label="النيش" value={w.niche} onChange={(v) => s.setWinner(w.id, { niche: v })} help="win.niche" />
+                <LabelHelp id="win.status">
+                  <label className="block">
+                    <div className="text-[11px] text-mute mb-1">الحالة</div>
+                    <select
+                      className="sheet-input"
+                      value={w.status}
+                      onChange={(e) => s.setWinner(w.id, { status: e.target.value as TestStatus })}
+                    >
+                      {STATUSES.map((x) => (
+                        <option key={x.id} value={x.id}>{x.ar}</option>
+                      ))}
+                    </select>
+                  </label>
+                </LabelHelp>
+                <Num label="سعر الصين $" value={w.chinaPrice} onChange={(n) => s.setWinner(w.id, { chinaPrice: n })} step={0.01} help="win.china" />
+                <Num label="سعر البيع $" value={w.sellingPrice} onChange={(n) => s.setWinner(w.id, { sellingPrice: n })} step={0.1} help="win.price" />
+                <Num label="الوزن كغ" value={w.weightKg} onChange={(n) => s.setWinner(w.id, { weightKg: n })} step={0.01} help="win.weight" />
+                <TextField label="رابط" value={w.alibabaUrl} onChange={(v) => s.setWinner(w.id, { alibabaUrl: v })} help="win.url" />
               </div>
+              <Explain id="win.criteria" open={false} />
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {CRITERIA.map((c) => (
-                  <label key={c.key} className="text-xs">
-                    <div className="flex justify-between text-mute mb-1">
-                      <span>{c.ar}</span>
-                      <span>{w[c.key]}/10</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={10}
-                      value={w[c.key]}
-                      onChange={(e) => s.setWinner(w.id, { [c.key]: parseInt(e.target.value, 10) })}
-                      className="w-full"
-                    />
-                  </label>
+                  <LabelHelp key={c.key} id={c.help}>
+                    <label className="text-xs">
+                      <div className="flex justify-between text-mute mb-1">
+                        <span>{c.ar}</span>
+                        <span>{w[c.key]}/10</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={10}
+                        value={w[c.key]}
+                        onChange={(e) => s.setWinner(w.id, { [c.key]: parseInt(e.target.value, 10) })}
+                        className="w-full"
+                      />
+                    </label>
+                  </LabelHelp>
                 ))}
               </div>
               <textarea
@@ -120,11 +134,15 @@ export default function WinnersPage() {
                 value={w.notes}
                 onChange={(e) => s.setWinner(w.id, { notes: e.target.value })}
               />
-              <div className="flex justify-between items-center mt-3 text-sm">
-                <span>
-                  تقييم {score.toFixed(1)}/10 · واصلة ≈ {money(landed)} · سعر مقترح {money(suggest)}
-                </span>
-                <button className="text-xs text-danger" onClick={() => s.removeWinner(w.id)}>حذف</button>
+              <div className="flex justify-between items-center mt-3 text-sm gap-3">
+                <div className="min-w-0">
+                  <span>
+                    تقييم {score.toFixed(1)}/10 · واصلة ≈ {money(landed)} · سعر مقترح {money(suggest)}
+                  </span>
+                  <Tip id="win.score" />
+                  <Tip id="win.suggestPrice" />
+                </div>
+                <button className="text-xs text-danger shrink-0" onClick={() => s.removeWinner(w.id)}>حذف</button>
               </div>
             </div>
           );

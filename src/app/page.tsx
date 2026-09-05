@@ -5,6 +5,7 @@ import { useCod } from "@/lib/store";
 import { calcPl, calcStability, opsTotal, stockPath } from "@/lib/cod";
 import { money } from "@/lib/format";
 import { Badge, Kpi, PageHead } from "@/components/ui";
+import { Explain } from "@/components/Explain";
 import { useT } from "@/lib/lang";
 
 export default function HomePage() {
@@ -20,8 +21,11 @@ export default function HomePage() {
   const dzOps = s.operations.find((o) => o.region === "algeria")!;
   const gulfNet = gulfProfit - opsTotal(gulfOps);
   const dzNet = dzProfitUsd - opsTotal(dzOps);
-  const stG = calcStability(s.stability.gulf);
-  const stDz = calcStability(s.stability.algeria);
+  const stG = calcStability(s.stability.gulf, gulfFees);
+  const stDz = calcStability(
+    { ...s.stability.algeria, fxToUsd: s.settings.usdToDzd },
+    dzFees
+  );
   const alerts = s.stock
     .map((item) => ({ item, path: stockPath(item) }))
     .filter((x) => x.path.advice === "order_now" || x.path.advice === "plan");
@@ -31,26 +35,30 @@ export default function HomePage() {
   return (
     <div className="lg:p-8">
       <PageHead kicker="STABILITY COD" title={t("home.title")} desc={t("home.desc")} />
+      <Explain id="home.page" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Kpi label={t("home.gulfNet")} value={money(gulfNet)} tone={gulfNet > 0 ? "good" : "bad"} hint="P&L − Operations" />
+        <Kpi label={t("home.gulfNet")} value={money(gulfNet)} tone={gulfNet > 0 ? "good" : "bad"} hint="P&L − Operations" help="home.gulfNet" />
         <Kpi
           label={t("home.dzNet")}
           value={money(dzNet)}
           tone={dzNet > 0 ? "good" : "bad"}
           hint={`${money(dzNet * s.settings.usdToDzd, "DZD", 0)}`}
+          help="home.dzNet"
         />
         <Kpi
           label={t("home.epd")}
           value={money(stG.oldP.epd)}
           tone={stG.stable ? "good" : "warn"}
           hint={stG.stable ? t("calc.stable") : t("calc.fragile")}
+          help="home.epd"
         />
         <Kpi
           label={t("home.alerts")}
           value={String(alerts.length)}
           tone={alerts.some((a) => a.path.advice === "order_now") ? "bad" : alerts.length ? "warn" : "good"}
           hint={`${winners} · ${testing}`}
+          help="home.alerts"
         />
       </div>
 
@@ -60,6 +68,7 @@ export default function HomePage() {
             <h2 className="font-bold">قرار المخزون الآن</h2>
             <Link href="/inventory" className="text-xs text-gold">إدارة المخزون</Link>
           </div>
+          <Explain id="home.stockDecision" open={false} />
           {alerts.length === 0 ? (
             <p className="text-sm text-mute">المخزون كافٍ. لا يوجد طلب عاجل اليوم.</p>
           ) : (
@@ -82,6 +91,7 @@ export default function HomePage() {
         </div>
         <div className="card p-5">
           <h2 className="font-bold mb-3">مؤشر الاستقرار</h2>
+          <Explain id="home.stabilityIndex" open={false} />
           <Row k="الخليج" v={stG.stable ? "Stability" : "غير مستقر"} ok={stG.stable} />
           <Row k="الجزائر" v={stDz.stable ? "Stability" : "غير مستقر"} ok={stDz.stable} />
           <Row k="التعادل من" v={`${Math.round(stG.breakevenDr * 100)}% توصيل`} ok={stG.breakevenDr <= 0.35} />

@@ -5,6 +5,7 @@ import { useCod } from "@/lib/store";
 import { stockPath } from "@/lib/cod";
 import { money } from "@/lib/format";
 import { Badge, Btn, Num, PageHead, TextField } from "@/components/ui";
+import { Explain, Tip } from "@/components/Explain";
 import { useT } from "@/lib/lang";
 import type { Region } from "@/lib/types";
 
@@ -36,6 +37,8 @@ export default function InventoryPage() {
         }
       />
 
+      <Explain id="inv.page" />
+
       <div className="space-y-4">
         {items.map((item) => {
           const p = stockPath(item);
@@ -50,6 +53,7 @@ export default function InventoryPage() {
                     <Badge tone={a.tone}>{a.ar}</Badge>
                     <Badge>{item.region === "gulf" ? "خليج" : "الجزائر"}</Badge>
                   </div>
+                  <Tip id="inv.advice" />
                   <p className="text-xs text-mute mt-1">
                     {item.warehouse} · SKU {item.sku} · قيمة المخزون {money(item.qty * item.unitCostUsd)}
                   </p>
@@ -58,14 +62,14 @@ export default function InventoryPage() {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-4">
-                <TextField label="الاسم" value={item.name} onChange={(v) => s.setStock(item.id, { name: v })} />
-                <TextField label="SKU" value={item.sku} onChange={(v) => s.setStock(item.id, { sku: v })} />
-                <TextField label="المستودع" value={item.warehouse} onChange={(v) => s.setStock(item.id, { warehouse: v })} />
-                <Num label="الكمية" value={item.qty} onChange={(n) => s.setStock(item.id, { qty: n })} />
-                <Num label="مبيعات / يوم" value={item.dailySales} onChange={(n) => s.setStock(item.id, { dailySales: n })} step={0.5} />
-                <Num label="مدة الاستيراد" value={item.leadTimeDays} onChange={(n) => s.setStock(item.id, { leadTimeDays: n })} />
-                <Num label="أيام أمان" value={item.bufferDays} onChange={(n) => s.setStock(item.id, { bufferDays: n })} />
-                <Num label="تكلفة القطعة $" value={item.unitCostUsd} onChange={(n) => s.setStock(item.id, { unitCostUsd: n })} step={0.1} />
+                <TextField label="الاسم" value={item.name} onChange={(v) => s.setStock(item.id, { name: v })} help="inv.name" />
+                <TextField label="SKU" value={item.sku} onChange={(v) => s.setStock(item.id, { sku: v })} help="inv.sku" />
+                <TextField label="المستودع" value={item.warehouse} onChange={(v) => s.setStock(item.id, { warehouse: v })} help="inv.warehouse" />
+                <Num label="الكمية" value={item.qty} onChange={(n) => s.setStock(item.id, { qty: n })} help="inv.qty" />
+                <Num label="مبيعات / يوم" value={item.dailySales} onChange={(n) => s.setStock(item.id, { dailySales: n })} step={0.5} help="inv.daily" />
+                <Num label="مدة الاستيراد" value={item.leadTimeDays} onChange={(n) => s.setStock(item.id, { leadTimeDays: n })} help="inv.lead" />
+                <Num label="أيام أمان" value={item.bufferDays} onChange={(n) => s.setStock(item.id, { bufferDays: n })} help="inv.buffer" />
+                <Num label="تكلفة القطعة $" value={item.unitCostUsd} onChange={(n) => s.setStock(item.id, { unitCostUsd: n })} step={0.1} help="inv.unitCost" />
               </div>
 
               <div className="h-2 rounded-full bg-line overflow-hidden mb-3">
@@ -76,12 +80,13 @@ export default function InventoryPage() {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                <Stat k="أيام حتى الصفر" v={`${p.daysLeft} يوم`} />
-                <Stat k="يوم النفاد" v={`اليوم ${p.stockZeroDay}`} />
-                <Stat k="احتياج 30 يوم" v={`${Math.ceil(p.needFor30)} قطعة`} />
+                <Stat k="أيام حتى الصفر" v={`${p.daysLeft} يوم`} help="inv.daysLeft" />
+                <Stat k="يوم النفاد" v={`اليوم ${p.stockZeroDay}`} help="inv.zeroDay" />
+                <Stat k="احتياج 30 يوم" v={`${Math.ceil(p.needFor30)} قطعة`} help="inv.need30" />
                 <Stat
                   k="آخر يوم للطلب"
                   v={p.orderByDay < 1 ? "فات الأوان — اطلب اليوم" : `اليوم ${p.orderByDay}`}
+                  help="inv.orderBy"
                 />
               </div>
               <p className="text-xs text-mute mt-3">
@@ -98,11 +103,12 @@ export default function InventoryPage() {
   );
 }
 
-function Stat({ k, v }: { k: string; v: string }) {
+function Stat({ k, v, help }: { k: string; v: string; help: string }) {
   return (
     <div className="border border-line rounded-lg p-3">
       <div className="text-[11px] text-mute">{k}</div>
       <div className="font-bold mt-1">{v}</div>
+      <Tip id={help} />
     </div>
   );
 }

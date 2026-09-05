@@ -5,6 +5,7 @@ import { useCod } from "@/lib/store";
 import { landedCost } from "@/lib/cod";
 import { money } from "@/lib/format";
 import { Badge, Btn, Num, PageHead, TextField } from "@/components/ui";
+import { Explain, LabelHelp, Tip } from "@/components/Explain";
 import { useT } from "@/lib/lang";
 import type { Region, ShipmentStatus } from "@/lib/types";
 
@@ -39,6 +40,7 @@ export default function AlibabaPage() {
           </div>
         }
       />
+      <Explain id="ab.page" />
 
       <div className="space-y-4">
         {list.map((ship) => {
@@ -62,52 +64,68 @@ export default function AlibabaPage() {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
-                <TextField label="المنتج" value={ship.productName} onChange={(v) => s.setShip(ship.id, { productName: v })} />
-                <TextField label="المورّد" value={ship.supplier} onChange={(v) => s.setShip(ship.id, { supplier: v })} />
-                <TextField label="رابط علي بابا" value={ship.alibabaUrl} onChange={(v) => s.setShip(ship.id, { alibabaUrl: v })} />
-                <TextField label="الوجهة" value={ship.destination} onChange={(v) => s.setShip(ship.id, { destination: v })} />
-                <label className="block">
-                  <div className="text-[11px] text-mute mb-1">الحالة</div>
-                  <select
-                    className="sheet-input"
-                    value={ship.status}
-                    onChange={(e) => s.setShip(ship.id, { status: e.target.value as ShipmentStatus })}
-                  >
-                    {STATUS.map((x) => (
-                      <option key={x.id} value={x.id}>{x.ar}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  <div className="text-[11px] text-mute mb-1">تاريخ الطلب</div>
-                  <input
-                    type="date"
-                    className="sheet-input"
-                    value={ship.orderDate}
-                    onChange={(e) => s.setShip(ship.id, { orderDate: e.target.value })}
-                  />
-                </label>
-                <Num label="سعر الصين $" value={ship.chinaPrice} onChange={(n) => s.setShip(ship.id, { chinaPrice: n })} step={0.01} />
-                <Num label="الوزن كغ / قطعة" value={ship.weightKg} onChange={(n) => s.setShip(ship.id, { weightKg: n })} step={0.01} />
-                <Num label="$ / كغ شحن" value={ship.seaRatePerKg} onChange={(n) => s.setShip(ship.id, { seaRatePerKg: n })} />
-                <Num label="الكمية" value={ship.qty} onChange={(n) => s.setShip(ship.id, { qty: n })} />
-                <Num label="جمارك %" value={ship.customsPct} onChange={(n) => s.setShip(ship.id, { customsPct: n })} step={0.01} />
-                <Num label="رسوم أخرى $" value={ship.otherFees} onChange={(n) => s.setShip(ship.id, { otherFees: n })} />
-                <Num label="أيام الإنتاج" value={ship.productionDays} onChange={(n) => s.setShip(ship.id, { productionDays: n })} />
-                <Num label="أيام الشحن" value={ship.transitDays} onChange={(n) => s.setShip(ship.id, { transitDays: n })} />
+                <TextField label="المنتج" value={ship.productName} onChange={(v) => s.setShip(ship.id, { productName: v })} help="ab.product" />
+                <TextField label="المورّد" value={ship.supplier} onChange={(v) => s.setShip(ship.id, { supplier: v })} help="ab.supplier" />
+                <TextField label="رابط علي بابا" value={ship.alibabaUrl} onChange={(v) => s.setShip(ship.id, { alibabaUrl: v })} help="ab.url" />
+                <TextField label="الوجهة" value={ship.destination} onChange={(v) => s.setShip(ship.id, { destination: v })} help="ab.dest" />
+                <LabelHelp id="ab.status">
+                  <label className="block">
+                    <div className="text-[11px] text-mute mb-1">الحالة</div>
+                    <select
+                      className="sheet-input"
+                      value={ship.status}
+                      onChange={(e) => {
+                        const next = e.target.value as ShipmentStatus;
+                        if (next === "in_stock" && ship.status !== "in_stock") {
+                          s.receiveShip(ship.id);
+                        } else {
+                          s.setShip(ship.id, { status: next });
+                        }
+                      }}
+                    >
+                      {STATUS.map((x) => (
+                        <option key={x.id} value={x.id}>{x.ar}</option>
+                      ))}
+                    </select>
+                  </label>
+                </LabelHelp>
+                <LabelHelp id="ab.orderDate">
+                  <label className="block">
+                    <div className="text-[11px] text-mute mb-1">تاريخ الطلب</div>
+                    <input
+                      type="date"
+                      className="sheet-input"
+                      value={ship.orderDate}
+                      onChange={(e) => s.setShip(ship.id, { orderDate: e.target.value })}
+                    />
+                  </label>
+                </LabelHelp>
+                <Num label="سعر الصين $" value={ship.chinaPrice} onChange={(n) => s.setShip(ship.id, { chinaPrice: n })} step={0.01} help="ab.china" />
+                <Num label="الوزن كغ / قطعة" value={ship.weightKg} onChange={(n) => s.setShip(ship.id, { weightKg: n })} step={0.01} help="ab.weight" />
+                <Num label="$ / كغ شحن" value={ship.seaRatePerKg} onChange={(n) => s.setShip(ship.id, { seaRatePerKg: n })} help="ab.sea" />
+                <Num label="الكمية" value={ship.qty} onChange={(n) => s.setShip(ship.id, { qty: n })} help="ab.qty" />
+                <Num label="جمارك %" value={ship.customsPct} onChange={(n) => s.setShip(ship.id, { customsPct: n })} step={0.01} help="ab.customs" />
+                <Num label="رسوم أخرى $" value={ship.otherFees} onChange={(n) => s.setShip(ship.id, { otherFees: n })} help="ab.other" />
+                <Num label="أيام الإنتاج" value={ship.productionDays} onChange={(n) => s.setShip(ship.id, { productionDays: n })} help="ab.prodDays" />
+                <Num label="أيام الشحن" value={ship.transitDays} onChange={(n) => s.setShip(ship.id, { transitDays: n })} help="ab.transit" />
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <Mini k="البضاعة" v={money(L.goods)} />
-                <Mini k="الشحن" v={money(L.shipping)} />
-                <Mini k="الجمارك" v={money(L.customs)} />
-                <Mini k="الإجمالي" v={money(L.total)} />
+                <Mini k="البضاعة" v={money(L.goods)} help="ab.goods" />
+                <Mini k="الشحن" v={money(L.shipping)} help="ab.shipping" />
+                <Mini k="الجمارك" v={money(L.customs)} help="ab.customsMoney" />
+                <Mini k="الإجمالي" v={money(L.total)} help="ab.total" />
                 <Mini
                   k="التكلفة الواصلة / قطعة"
                   v={`${money(L.perUnit)}${ship.region === "algeria" ? ` · ${money(dzd, "DZD", 0)}` : ""}`}
+                  help="ab.perUnit"
                 />
               </div>
+              <Explain id="ab.perUnit" />
               <p className="text-xs text-mute mt-3">{ship.note}</p>
+              {ship.status === "in_stock" && (
+                <p className="text-xs text-profit mt-2">{t("ab.landedStock")}</p>
+              )}
             </div>
           );
         })}
@@ -116,11 +134,12 @@ export default function AlibabaPage() {
   );
 }
 
-function Mini({ k, v }: { k: string; v: string }) {
+function Mini({ k, v, help }: { k: string; v: string; help?: string }) {
   return (
     <div className="border border-line rounded-lg p-3">
       <div className="text-[11px] text-mute">{k}</div>
       <div className="font-bold mt-1">{v}</div>
+      {help && <Tip id={help} />}
     </div>
   );
 }

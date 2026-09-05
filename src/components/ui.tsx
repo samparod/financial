@@ -1,6 +1,7 @@
 "use client";
 
 import { cls } from "@/lib/format";
+import { Tip } from "@/components/Explain";
 
 export function PageHead({
   kicker,
@@ -18,7 +19,7 @@ export function PageHead({
       <div className="min-w-0">
         {kicker && <div className="text-[10px] lg:text-[11px] text-gold tracking-widest mb-1">{kicker}</div>}
         <h1 className="text-xl lg:text-2xl font-extrabold leading-tight">{title}</h1>
-        {desc && <p className="hidden sm:block text-sm text-mute mt-1 max-w-2xl">{desc}</p>}
+        {desc && <p className="text-sm text-mute mt-1 max-w-2xl">{desc}</p>}
       </div>
       {extra && <div className="w-full sm:w-auto flex flex-wrap gap-2">{extra}</div>}
     </div>
@@ -30,11 +31,13 @@ export function Kpi({
   value,
   hint,
   tone = "neutral",
+  help,
 }: {
   label: string;
   value: string;
   hint?: string;
   tone?: "neutral" | "good" | "bad" | "gold" | "warn";
+  help?: string;
 }) {
   const color =
     tone === "good"
@@ -51,6 +54,7 @@ export function Kpi({
       <div className="kpi-label">{label}</div>
       <div className={cls("text-lg lg:text-2xl font-extrabold mt-1 tabular-nums", color)}>{value}</div>
       {hint && <div className="text-xs text-mute mt-1">{hint}</div>}
+      {help && <Tip id={help} />}
     </div>
   );
 }
@@ -61,12 +65,14 @@ export function Num({
   onChange,
   step = 1,
   suffix,
+  help,
 }: {
   label: string;
   value: number;
   onChange: (n: number) => void;
   step?: number;
   suffix?: string;
+  help?: string;
 }) {
   return (
     <label className="block">
@@ -77,10 +83,12 @@ export function Num({
           step={step}
           value={Number.isFinite(value) ? value : 0}
           onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-          className="sheet-input"
+          className="sheet-input tabular-nums"
+          dir="ltr"
         />
-        {suffix && <span className="absolute left-2 top-1.5 text-[11px] text-mute">{suffix}</span>}
+        {suffix && <span className="absolute start-2 top-1.5 text-[11px] text-mute">{suffix}</span>}
       </div>
+      {help && <Tip id={help} />}
     </label>
   );
 }
@@ -89,15 +97,18 @@ export function TextField({
   label,
   value,
   onChange,
+  help,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  help?: string;
 }) {
   return (
     <label className="block">
       <div className="text-[11px] text-mute mb-1">{label}</div>
       <input value={value} onChange={(e) => onChange(e.target.value)} className="sheet-input" />
+      {help && <Tip id={help} />}
     </label>
   );
 }

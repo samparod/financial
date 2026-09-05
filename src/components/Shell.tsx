@@ -83,22 +83,10 @@ function NavLinks({
 
 function ShellInner({ children }: { children: React.ReactNode }) {
   const path = usePathname();
-  const { t, lang, setLang } = useT();
+  const { t, lang, setLang, helpOn, setHelpOn } = useT();
   const hydrated = useCod((s) => s.hydrated);
-  const setHydrated = useCod((s) => s.setHydrated);
   const sync = useServerSync();
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const finish = () => setHydrated(true);
-    const unsub = useCod.persist.onFinishHydration(finish);
-    if (useCod.persist.hasHydrated()) finish();
-    const timer = window.setTimeout(finish, 400);
-    return () => {
-      unsub();
-      window.clearTimeout(timer);
-    };
-  }, [setHydrated]);
 
   useEffect(() => {
     setOpen(false);
@@ -111,7 +99,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         <nav className="flex-1 overflow-y-auto py-3 px-2">
           <NavLinks />
         </nav>
-        <SyncFoot t={t} sync={sync} />
+        <SyncFoot t={t} sync={sync} helpOn={helpOn} setHelpOn={setHelpOn} />
       </aside>
 
       <header
@@ -168,7 +156,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             <nav className="flex-1 overflow-y-auto px-2 py-2">
               <NavLinks compact onClick={() => setOpen(false)} />
             </nav>
-            <SyncFoot t={t} sync={sync} />
+            <SyncFoot t={t} sync={sync} helpOn={helpOn} setHelpOn={setHelpOn} />
           </div>
         </div>
       )}
@@ -209,7 +197,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             className="flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] text-mute"
           >
             <Menu size={20} />
-            <span>Menu</span>
+            <span>{t("nav.menu")}</span>
           </button>
         </div>
       </nav>
@@ -250,13 +238,30 @@ function Brand({
   );
 }
 
-function SyncFoot({ t, sync }: { t: (k: string) => string; sync: string }) {
+function SyncFoot({
+  t,
+  sync,
+  helpOn,
+  setHelpOn,
+}: {
+  t: (k: string) => string;
+  sync: string;
+  helpOn: boolean;
+  setHelpOn: (v: boolean) => void;
+}) {
   return (
-    <div className="p-4 text-[11px] text-mute border-t border-line space-y-1">
+    <div className="p-4 text-[11px] text-mute border-t border-line space-y-2">
       <div>{t("brand.foot")}</div>
       <div className={sync === "server" ? "text-profit" : sync === "offline" ? "text-danger" : "text-mute"}>
-        {sync === "server" ? "محفوظ مع التيليغرام / السيرفر" : sync === "offline" ? "السيرفر غير متصل" : "حفظ محلي في المتصفح"}
+        {sync === "server" ? t("sync.server") : sync === "offline" ? t("sync.offline") : t("sync.local")}
       </div>
+      <button
+        type="button"
+        className="text-gold"
+        onClick={() => setHelpOn(!helpOn)}
+      >
+        {helpOn ? t("help.hide") : t("help.show")}
+      </button>
     </div>
   );
 }

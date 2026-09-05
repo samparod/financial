@@ -7,14 +7,19 @@ const LangCtx = createContext<{
   lang: Lang;
   setLang: (l: Lang) => void;
   t: (key: string) => string;
+  helpOn: boolean;
+  setHelpOn: (v: boolean) => void;
 } | null>(null);
 
 export function LangProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>("ar");
+  const [helpOn, setHelpOnState] = useState(true);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("lmofid-lang") as Lang | null;
     if (saved === "ar" || saved === "fr" || saved === "en") setLangState(saved);
+    const help = window.localStorage.getItem("lmofid-help");
+    if (help === "off") setHelpOnState(false);
   }, []);
 
   useEffect(() => {
@@ -27,8 +32,13 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem("lmofid-lang", l);
   };
 
+  const setHelpOn = (v: boolean) => {
+    setHelpOnState(v);
+    window.localStorage.setItem("lmofid-help", v ? "on" : "off");
+  };
+
   return (
-    <LangCtx.Provider value={{ lang, setLang, t: (k) => tr(lang, k) }}>
+    <LangCtx.Provider value={{ lang, setLang, t: (k) => tr(lang, k), helpOn, setHelpOn }}>
       {children}
     </LangCtx.Provider>
   );

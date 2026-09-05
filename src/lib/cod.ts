@@ -112,8 +112,8 @@ export function realAdCost(testCost: number, costPct: number) {
   return testCost * (1 + costPct);
 }
 
-/** ورقة Stock Managments — نفس معادلات Lmofid.COD */
-export function calcStability(input: StabilityInput) {
+/** ورقة Stock Managments — Cost of Service من رسوم الإعدادات لا أرقام ثابتة */
+export function calcStability(input: StabilityInput, fees: Fees = DEFAULT_GULF_FEES) {
   const q = input.quantity;
   const cr = input.confirmationRate;
   const dr = input.deliveredRate;
@@ -123,15 +123,11 @@ export function calcStability(input: StabilityInput) {
   const product = delivered * input.productCost;
   const priceUsd = input.fxToUsd > 0 ? input.sellingPriceLocal / input.fxToUsd : input.sellingPriceLocal;
   const altUsd = input.fxToUsd > 0 ? input.altPriceLocal / input.fxToUsd : input.altPriceLocal;
+  const orders = q * cr;
 
   const scenario = (price: number) => {
-    const sales = q * cr * dr * price;
-    const service =
-      q * 0.5 +
-      q * cr * 1 +
-      q * cr * dr * 2 +
-      q * cr * 3.99 +
-      sales * 0.05;
+    const sales = delivered * price;
+    const service = costOfService(q, orders, delivered, sales, fees).total;
     const profit = sales - service - product - ads;
     const epd = delivered > 0 ? profit / delivered : 0;
     return {
@@ -148,7 +144,7 @@ export function calcStability(input: StabilityInput) {
 
   const oldP = scenario(priceUsd);
   const newP = scenario(altUsd);
-  const breakevenDr = findBreakevenDelivered(input, priceUsd);
+  const breakevenDr = findBreakevenDelivered(input, priceUsd, fees);
   const stable = oldP.epd >= 8 && oldP.profit > 0 && input.deliveredRate >= 0.35;
   const competitive = newP.epd >= 5 && newP.profit > 0;
 
@@ -164,7 +160,7 @@ export function calcStability(input: StabilityInput) {
   };
 }
 
-function findBreakevenDelivered(input: StabilityInput, priceUsd: number) {
+function findBreakevenDelivered(input: StabilityInput, priceUsd: number, fees: Fees) {
   for (let dr = 0.05; dr <= 1; dr += 0.01) {
     const clone = { ...input, deliveredRate: dr };
     const q = clone.quantity;
@@ -172,8 +168,7 @@ function findBreakevenDelivered(input: StabilityInput, priceUsd: number) {
     const real = realAdCost(clone.testCost, clone.costPct);
     const delivered = q * cr * dr;
     const sales = delivered * priceUsd;
-    const service =
-      q * 0.5 + q * cr * 1 + delivered * 2 + q * cr * 3.99 + sales * 0.05;
+    const service = costOfService(q, q * cr, delivered, sales, fees).total;
     const profit = sales - service - delivered * clone.productCost - q * real;
     if (profit >= 0) return dr;
   }
@@ -287,7 +282,7 @@ export function opsTotal(o: Operations) {
 export function stockPath(item: StockItem) {
   const daily = Math.max(item.dailySales, 0.0001);
   const daysLeft = item.qty / daily;
-  const stockZeroDay = Math.ceil(daysLeft);
+  const stockZeroDay = Math.max(1, Math.ceil(daysLeft));
   const needFor30 = daily * 30;
   const cover30 = item.qty - needFor30;
   const orderByDay = Math.floor(daysLeft - item.leadTimeDays - item.bufferDays);
@@ -299,7 +294,7 @@ export function stockPath(item: StockItem) {
   else if (daysLeft > 60 && item.qty > needFor30 * 1.8) advice = "overstock";
   const days: { day: number; remaining: number; event?: string }[] = [];
   for (let d = 1; d <= 32; d++) {
-    const remaining = Math.max(0, round2(item.qty - daily * (d - 1)));
+    const remaining = Math.max(0, round2(item.qty - daily * d));
     let event: string | undefined;
     if (d === 1) event = "اليوم";
     if (d === stockZeroDay) event = "المخزون صفر";

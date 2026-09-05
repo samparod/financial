@@ -310,9 +310,12 @@ export async function setTelegramWebhook() {
   const token = TOKEN();
   const hook = process.env.WEBHOOK_URL;
   if (!token || !hook) return;
+  const body: Record<string, string> = { url: `${hook.replace(/\/$/, "")}/api/telegram` };
+  const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
+  if (secret) body.secret_token = secret;
   await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url: `${hook.replace(/\/$/, "")}/api/telegram` }),
+    body: JSON.stringify(body),
   });
 }

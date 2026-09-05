@@ -5,6 +5,7 @@ import { useCod } from "@/lib/store";
 import { calcGulfSim, calcPl, calcStability, opsTotal } from "@/lib/cod";
 import { money, pct } from "@/lib/format";
 import { Badge, Kpi, Num, PageHead } from "@/components/ui";
+import { Explain, LabelHelp } from "@/components/Explain";
 import { useT } from "@/lib/lang";
 
 export default function AlgeriaPage() {
@@ -16,7 +17,10 @@ export default function AlgeriaPage() {
   const ops = s.operations.find((o) => o.region === "algeria")!;
   const profitUsd = rows.reduce((a, p) => a + calcPl(p, fees).profit, 0);
   const netUsd = profitUsd - opsTotal(ops);
-  const st = calcStability(s.stability.algeria);
+  const st = calcStability(
+    { ...s.stability.algeria, fxToUsd: fx },
+    fees
+  );
 
   const sim = useMemo(
     () =>
@@ -49,27 +53,31 @@ export default function AlgeriaPage() {
         extra={<Badge tone="gold">1 $ = {fx} د.ج</Badge>}
       />
 
+      <Explain id="dz.page" />
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Kpi label="صافي الدولار" value={money(netUsd)} tone={netUsd > 0 ? "good" : "bad"} />
-        <Kpi label="صافي الدينار" value={money(netUsd * fx, "DZD", 0)} tone="gold" />
-        <Kpi label="تأكيد / توصيل" value={`${pct(s.settings.algeriaConfirm)} · ${pct(s.settings.algeriaDelivered)}`} />
-        <Kpi label="EPD اختبار" value={money(st.oldP.epd)} tone={st.stable ? "good" : "warn"} hint={st.stable ? "Stability" : "تحت العتبة"} />
+        <Kpi label="صافي الدولار" value={money(netUsd)} tone={netUsd > 0 ? "good" : "bad"} help="dz.netUsd" />
+        <Kpi label="صافي الدينار" value={money(netUsd * fx, "DZD", 0)} tone="gold" help="dz.netDzd" />
+        <Kpi label="تأكيد / توصيل" value={`${pct(s.settings.algeriaConfirm)} · ${pct(s.settings.algeriaDelivered)}`} help="dz.confirmDeliver" />
+        <Kpi label="EPD اختبار" value={money(st.oldP.epd)} tone={st.stable ? "good" : "warn"} hint={st.stable ? "Stability" : "تحت العتبة"} help="dz.epd" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 mb-6">
         <div className="card p-5">
           <h2 className="font-bold mb-3">مدخلات السوق الجزائري</h2>
           <div className="grid grid-cols-2 gap-3">
-            <Num label="سعر الصرف د.ج / $" value={fx} onChange={(n) => s.patchSettings({ usdToDzd: n })} />
-            <Num label="Confirmation" value={s.settings.algeriaConfirm} onChange={(n) => s.patchSettings({ algeriaConfirm: n })} step={0.01} />
-            <Num label="Delivered" value={s.settings.algeriaDelivered} onChange={(n) => s.patchSettings({ algeriaDelivered: n })} step={0.01} />
-            <Num label="توصيل د.ج" value={s.settings.algeriaDeliveryDzd} onChange={(n) => s.patchSettings({ algeriaDeliveryDzd: n })} />
-            <Num label="مرتجع د.ج" value={s.settings.algeriaReturnDzd} onChange={(n) => s.patchSettings({ algeriaReturnDzd: n })} />
-            <Num label="كول سنتر د.ج" value={s.settings.algeriaCallCenterDzd} onChange={(n) => s.patchSettings({ algeriaCallCenterDzd: n })} />
+            <Num label="سعر الصرف د.ج / $" value={fx} onChange={(n) => s.patchSettings({ usdToDzd: n })} help="dz.fx" />
+            <Num label="Confirmation" value={s.settings.algeriaConfirm} onChange={(n) => s.patchSettings({ algeriaConfirm: n })} step={0.01} help="dz.confirm" />
+            <Num label="Delivered" value={s.settings.algeriaDelivered} onChange={(n) => s.patchSettings({ algeriaDelivered: n })} step={0.01} help="dz.delivered" />
+            <Num label="توصيل د.ج" value={s.settings.algeriaDeliveryDzd} onChange={(n) => s.patchSettings({ algeriaDeliveryDzd: n })} help="dz.delivery" />
+            <Num label="مرتجع د.ج" value={s.settings.algeriaReturnDzd} onChange={(n) => s.patchSettings({ algeriaReturnDzd: n })} help="dz.return" />
+            <Num label="كول سنتر د.ج" value={s.settings.algeriaCallCenterDzd} onChange={(n) => s.patchSettings({ algeriaCallCenterDzd: n })} help="dz.callCenter" />
           </div>
         </div>
         <div className="card p-5 lg:col-span-2">
-          <h2 className="font-bold mb-3">محاكاة 100 ليد — عمودين</h2>
+          <h2 className="font-bold mb-3">
+            <LabelHelp id="dz.sim100">محاكاة 100 ليد — عمودين</LabelHelp>
+          </h2>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-mute">
@@ -81,7 +89,7 @@ export default function AlgeriaPage() {
             <tbody>
               {[
                 ["مبيعات COD", sim.sales],
-                ["توصيل (محلي)", (s.settings.algeriaDeliveryDzd / fx) * sim.delivered],
+                ["توصيل (محلي)", sim.shipping],
                 ["كول سنتر", sim.callCenter],
                 ["COD fees", sim.cod],
                 ["إعلانات", sim.ads],

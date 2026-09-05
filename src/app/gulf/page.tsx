@@ -5,12 +5,14 @@ import { GULF_COUNTRIES, calcGulfSim } from "@/lib/cod";
 import { useCod } from "@/lib/store";
 import { money, pct } from "@/lib/format";
 import { Badge, Kpi, Num, PageHead } from "@/components/ui";
+import { Explain, LabelHelp } from "@/components/Explain";
 import { useT } from "@/lib/lang";
 import type { GulfCountry } from "@/lib/types";
 
 export default function GulfPage() {
   const { t } = useT();
   const fees = useCod((s) => s.settings.gulfFees);
+  const gulfPl = useCod((s) => s.plProducts.filter((p) => p.region === "gulf"));
   const [country, setCountry] = useState<GulfCountry>("KSA");
   const profile = GULF_COUNTRIES.find((c) => c.id === country)!;
   const [leads, setLeads] = useState(1000);
@@ -40,6 +42,33 @@ export default function GulfPage() {
     <div className="lg:p-8">
       <PageHead kicker="GULF ACCOUNTS" title={t("gulf.title")} desc={t("sheet.formula")} />
 
+      <Explain id="gulf.page" />
+
+      {gulfPl.length > 0 && (
+        <select
+          className="sheet-input w-56 mb-4"
+          defaultValue=""
+          onChange={(e) => {
+            const p = gulfPl.find((x) => x.id === e.target.value);
+            e.currentTarget.value = "";
+            if (!p) return;
+            setLeads(p.leads || 1000);
+            setProductCost(p.productCost || productCost);
+            if (p.leads > 0) setCr(Math.round((p.orders / p.leads) * 100) / 100);
+            if (p.orders > 0) setDr(Math.round((p.delivered / p.orders) * 100) / 100);
+            if (p.leads > 0 && p.adsSpend > 0) setCpl(Math.round((p.adsSpend / p.leads) * 100) / 100);
+            if (p.delivered > 0) setAovLocal(Math.round((p.totalSales / p.delivered) * profile.fxToUsd));
+          }}
+        >
+          <option value="">{t("calc.fromSheet")}</option>
+          {gulfPl.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      )}
+
       <div className="flex flex-wrap gap-2 mb-6">
         {GULF_COUNTRIES.map((c) => (
           <button
@@ -68,33 +97,35 @@ export default function GulfPage() {
             <Line k="سعر الصرف إلى الدولار" v={`1 ${profile.currency} = ${(1 / profile.fxToUsd).toFixed(3)} $`} />
           </div>
           <div className="grid grid-cols-2 gap-3 mt-5">
-            <Num label="Leads" value={leads} onChange={setLeads} />
-            <Num label="تكلفة المنتج $" value={productCost} onChange={setProductCost} step={0.1} />
-            <Num label="Confirmation" value={cr} onChange={setCr} step={0.01} />
-            <Num label="Delivered Rate" value={dr} onChange={setDr} step={0.01} />
-            <Num label="CPL / CPP $" value={cpl} onChange={setCpl} step={0.1} />
-            <Num label={`سعر البيع ${profile.currency}`} value={aovLocal} onChange={setAovLocal} />
+            <Num label="Leads" value={leads} onChange={setLeads} help="gulf.leads" />
+            <Num label="تكلفة المنتج $" value={productCost} onChange={setProductCost} step={0.1} help="gulf.productCost" />
+            <Num label="Confirmation" value={cr} onChange={setCr} step={0.01} help="gulf.cr" />
+            <Num label="Delivered Rate" value={dr} onChange={setDr} step={0.01} help="gulf.dr" />
+            <Num label="CPL / CPP $" value={cpl} onChange={setCpl} step={0.1} help="gulf.cpl" />
+            <Num label={`سعر البيع ${profile.currency}`} value={aovLocal} onChange={setAovLocal} help="gulf.price" />
           </div>
         </div>
 
         <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3 content-start">
-          <Kpi label="مؤكَّد" value={String(Math.round(r.confirmed))} />
-          <Kpi label="مسلَّم" value={String(Math.round(r.delivered))} />
-          <Kpi label="المبيعات USD" value={money(r.sales)} tone="gold" hint={`${money(r.sales * profile.fxToUsd, profile.currency, 0)}`} />
-          <Kpi label="EPD" value={money(r.epd)} tone={r.epd >= 10 ? "good" : r.epd > 0 ? "warn" : "bad"} />
-          <Kpi label="الشحن" value={money(r.shipping)} />
-          <Kpi label="كول سنتر + إضافي" value={money(r.callCenter)} />
-          <Kpi label="رسوم COD 5%" value={money(r.cod)} />
-          <Kpi label="إعلانات" value={money(r.ads)} />
-          <Kpi label="تكلفة البضاعة" value={money(r.productSold)} />
-          <Kpi label="الاستثمار" value={money(r.invest)} />
-          <Kpi label="الربح" value={money(r.profit)} tone={r.profit > 0 ? "good" : "bad"} />
-          <Kpi label="ROI" value={pct(r.roi)} tone={r.roi > 0.3 ? "good" : "warn"} hint={`هامش ${pct(r.margin)}`} />
+          <Kpi label="مؤكَّد" value={String(Math.round(r.confirmed))} help="gulf.confirmed" />
+          <Kpi label="مسلَّم" value={String(Math.round(r.delivered))} help="gulf.delivered" />
+          <Kpi label="المبيعات USD" value={money(r.sales)} tone="gold" hint={`${money(r.sales * profile.fxToUsd, profile.currency, 0)}`} help="gulf.sales" />
+          <Kpi label="EPD" value={money(r.epd)} tone={r.epd >= 10 ? "good" : r.epd > 0 ? "warn" : "bad"} help="gulf.epd" />
+          <Kpi label="الشحن" value={money(r.shipping)} help="gulf.shipping" />
+          <Kpi label="كول سنتر + إضافي" value={money(r.callCenter)} help="gulf.callCenter" />
+          <Kpi label="رسوم COD 5%" value={money(r.cod)} help="gulf.cod" />
+          <Kpi label="إعلانات" value={money(r.ads)} help="gulf.ads" />
+          <Kpi label="تكلفة البضاعة" value={money(r.productSold)} help="gulf.productSold" />
+          <Kpi label="الاستثمار" value={money(r.invest)} help="gulf.invest" />
+          <Kpi label="الربح" value={money(r.profit)} tone={r.profit > 0 ? "good" : "bad"} help="gulf.profit" />
+          <Kpi label="ROI" value={pct(r.roi)} tone={r.roi > 0.3 ? "good" : "warn"} hint={`هامش ${pct(r.margin)}`} help="gulf.roi" />
         </div>
       </div>
 
       <div className="card p-5">
-        <h2 className="font-bold mb-3">مقارنة الدول بنفس المدخلات</h2>
+        <h2 className="font-bold mb-3">
+          <LabelHelp id="gulf.compare">مقارنة الدول بنفس المدخلات</LabelHelp>
+        </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
