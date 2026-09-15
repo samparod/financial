@@ -266,7 +266,7 @@ export const useCod = create<Store>()(
         winners: s.winners,
       }),
       onRehydrateStorage: () => () => {
-        /* hydrated after server sync */
+        useCod.setState({ hydrated: true });
       },
     }
   )

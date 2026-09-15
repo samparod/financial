@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { useCod } from "@/lib/store";
 import { calcPl, opsTotal } from "@/lib/cod";
@@ -8,6 +9,9 @@ import { Btn, Num, PageHead } from "@/components/ui";
 import { Explain, LabelHelp } from "@/components/Explain";
 import { useT } from "@/lib/lang";
 import type { PlProduct, Region } from "@/lib/types";
+
+/** P&L formulas match the Excel sheet — amounts are USD */
+const PL_CUR = "USD" as const;
 
 function fmt(n: number, ints = false) {
   if (!Number.isFinite(n)) return "—";
@@ -21,12 +25,14 @@ function CellInput({
   value,
   onChange,
   step = 1,
+  moneyPrefix,
 }: {
   value: number;
   onChange: (n: number) => void;
   step?: number;
+  moneyPrefix?: boolean;
 }) {
-  return (
+  const input = (
     <input
       type="number"
       step={step}
@@ -35,6 +41,13 @@ function CellInput({
       className="w-full bg-[#0b1220] border border-line rounded px-1 py-1.5 text-center text-sm tabular-nums outline-none focus:border-gold"
       dir="ltr"
     />
+  );
+  if (!moneyPrefix) return input;
+  return (
+    <div className="flex items-center gap-0.5 min-w-0" dir="ltr">
+      <span className="text-[10px] text-gold shrink-0">$</span>
+      {input}
+    </div>
   );
 }
 
@@ -54,11 +67,13 @@ function Calc({
     <tr className={`border-t border-line ${className}`}>
       <td className="p-2 align-top font-medium min-w-[140px]">{label}</td>
       {values.map((v, i) => (
-        <td key={i} className="p-2 text-center tabular-nums bg-[#14304a] text-[#9fd6ff]">
-          {fmt(v, ints)}
+        <td key={i} className="p-2 text-center tabular-nums bg-[#14304a] text-[#9fd6ff]" dir="ltr">
+          {ints ? fmt(v, true) : money(v, PL_CUR)}
         </td>
       ))}
-      <td className="p-2 text-center tabular-nums bg-[#1a3a58] font-bold text-[#9fd6ff]">{fmt(sum, ints)}</td>
+      <td className="p-2 text-center tabular-nums bg-[#1a3a58] font-bold text-[#9fd6ff]" dir="ltr">
+        {ints ? fmt(sum, true) : money(sum, PL_CUR)}
+      </td>
     </tr>
   );
 }
@@ -80,11 +95,11 @@ export default function AccountsPage() {
   const set = (p: PlProduct, patch: Partial<PlProduct>) => s.setPl(p.id, patch);
 
   const inputRows = [
-    { key: "productCost" as const, help: "sheet.productCost", step: 0.01 },
-    { key: "leads" as const, help: "sheet.lead" },
-    { key: "orders" as const, help: "sheet.order" },
-    { key: "delivered" as const, help: "sheet.delivered" },
-    { key: "totalSales" as const, help: "sheet.sales", step: 0.01 },
+    { key: "productCost" as const, help: "sheet.productCost", step: 0.01, money: true },
+    { key: "leads" as const, help: "sheet.lead", money: false },
+    { key: "orders" as const, help: "sheet.order", money: false },
+    { key: "delivered" as const, help: "sheet.delivered", money: false },
+    { key: "totalSales" as const, help: "sheet.sales", step: 0.01, money: true },
   ];
 
   const spendRows = [
@@ -118,8 +133,18 @@ export default function AccountsPage() {
 
       <Explain id="sheet.page" />
 
-      <p className="text-xs text-mute mb-3">
+      <p className="text-xs text-mute mb-2">
         {t("sheet.formulaHint")} — <span className="text-gold font-mono">{t("sheet.formula")}</span>
+      </p>
+      <p className="text-xs text-gold mb-2 font-semibold">{t("sheet.currencyUsd")}</p>
+      {region === "algeria" && (
+        <p className="text-xs text-mute mb-2">{t("sheet.algeriaCurrencyNote")}</p>
+      )}
+      <p className="text-xs text-mute mb-3">
+        {t("sheet.stockNotHere")}{" "}
+        <Link href="/inventory" className="text-gold underline">{t("nav.inventory")}</Link>
+        {" · "}
+        <Link href="/roadmap" className="text-gold underline">{t("nav.roadmap")}</Link>
       </p>
 
       <div className="overflow-x-auto card">
@@ -150,15 +175,15 @@ export default function AccountsPage() {
                     <CellInput
                       value={p[f.key] as number}
                       step={f.step ?? 1}
+                      moneyPrefix={f.money}
                       onChange={(n) => set(p, { [f.key]: n })}
                     />
                   </td>
                 ))}
-                <td className="p-2 text-center tabular-nums">
-                  {fmt(
-                    rows.reduce((a, p) => a + (p[f.key] as number), 0),
-                    f.key !== "productCost" && f.key !== "totalSales"
-                  )}
+                <td className="p-2 text-center tabular-nums" dir="ltr">
+                  {f.money
+                    ? money(rows.reduce((a, p) => a + (p[f.key] as number), 0), PL_CUR)
+                    : fmt(rows.reduce((a, p) => a + (p[f.key] as number), 0), true)}
                 </td>
               </tr>
             ))}
@@ -193,11 +218,16 @@ export default function AccountsPage() {
                 </td>
                 {rows.map((p) => (
                   <td key={p.id} className="p-1">
-                    <CellInput value={p[f.key] as number} step={0.01} onChange={(n) => set(p, { [f.key]: n })} />
+                    <CellInput
+                      value={p[f.key] as number}
+                      step={0.01}
+                      moneyPrefix
+                      onChange={(n) => set(p, { [f.key]: n })}
+                    />
                   </td>
                 ))}
-                <td className="p-2 text-center tabular-nums">
-                  {fmt(rows.reduce((a, p) => a + (p[f.key] as number), 0))}
+                <td className="p-2 text-center tabular-nums" dir="ltr">
+                  {money(rows.reduce((a, p) => a + (p[f.key] as number), 0), PL_CUR)}
                 </td>
               </tr>
             ))}
@@ -244,10 +274,12 @@ export default function AccountsPage() {
               </td>
               {rows.map((p) => (
                 <td key={p.id} className="p-1">
-                  <CellInput value={p.bonus} step={0.01} onChange={(n) => set(p, { bonus: n })} />
+                  <CellInput value={p.bonus} step={0.01} moneyPrefix onChange={(n) => set(p, { bonus: n })} />
                 </td>
               ))}
-              <td className="p-2 text-center">{fmt(rows.reduce((a, p) => a + p.bonus, 0))}</td>
+              <td className="p-2 text-center" dir="ltr">
+                {money(rows.reduce((a, p) => a + p.bonus, 0), PL_CUR)}
+              </td>
             </tr>
 
             <Calc
@@ -261,12 +293,19 @@ export default function AccountsPage() {
                 <LabelHelp id="sheet.profits">{t("sheet.profits")}</LabelHelp>
               </td>
               {calcs.map((c, i) => (
-                <td key={rows[i].id} className={`p-2 text-center font-bold tabular-nums ${c.profit >= 0 ? "text-profit" : "text-danger"}`}>
-                  {fmt(c.profit)}
+                <td
+                  key={rows[i].id}
+                  className={`p-2 text-center font-bold tabular-nums ${c.profit >= 0 ? "text-profit" : "text-danger"}`}
+                  dir="ltr"
+                >
+                  {money(c.profit, PL_CUR)}
                 </td>
               ))}
-              <td className={`p-2 text-center font-bold ${profitSum >= 0 ? "text-profit" : "text-danger"}`}>
-                {fmt(profitSum)}
+              <td
+                className={`p-2 text-center font-bold ${profitSum >= 0 ? "text-profit" : "text-danger"}`}
+                dir="ltr"
+              >
+                {money(profitSum, PL_CUR)}
               </td>
             </tr>
 
@@ -331,37 +370,37 @@ export default function AccountsPage() {
           </h2>
           <div className="grid grid-cols-2 gap-3 mt-4">
             <Num
-              label={t("sheet.salaries")}
+              label={`${t("sheet.salaries")} $`}
               value={ops.salaries}
               onChange={(n) => s.setOps(region, { salaries: n })}
               help="sheet.salaries"
             />
             <Num
-              label={t("sheet.vat")}
+              label={`${t("sheet.vat")} $`}
               value={ops.vatDuty}
               onChange={(n) => s.setOps(region, { vatDuty: n })}
               help="sheet.vat"
             />
             <Num
-              label={t("sheet.rent")}
+              label={`${t("sheet.rent")} $`}
               value={ops.rent}
               onChange={(n) => s.setOps(region, { rent: n })}
               help="sheet.rent"
             />
             <Num
-              label={t("sheet.utilities")}
+              label={`${t("sheet.utilities")} $`}
               value={ops.utilities}
               onChange={(n) => s.setOps(region, { utilities: n })}
               help="sheet.utilities"
             />
             <Num
-              label={t("sheet.mgmt")}
+              label={`${t("sheet.mgmt")} $`}
               value={ops.management}
               onChange={(n) => s.setOps(region, { management: n })}
               help="sheet.mgmt"
             />
             <Num
-              label={t("sheet.extra")}
+              label={`${t("sheet.extra")} $`}
               value={ops.extra}
               onChange={(n) => s.setOps(region, { extra: n })}
               help="sheet.extra"

@@ -34,6 +34,20 @@ function applyServer(data: AppState) {
   });
 }
 
+async function fetchState(timeoutMs = 8000): Promise<AppState | null> {
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch("/api/state", { cache: "no-store", signal: ctrl.signal });
+    if (!r.ok) return null;
+    return (await r.json()) as AppState;
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 export function useServerSync() {
   const [mode, setMode] = useState<"local" | "server" | "offline">("local");
   const timer = useRef<number | null>(null);
@@ -68,18 +82,15 @@ export function useServerSync() {
         setMode("local");
         return;
       }
-      try {
-        const r = await fetch("/api/state", { cache: "no-store" });
-        if (!r.ok) throw new Error("api");
-        const data = (await r.json()) as AppState;
-        if (stop) return;
+      const data = await fetchState();
+      if (stop) return;
+      if (data) {
         applyServer(data);
         setMode("server");
         window.setTimeout(() => {
           skip.current = false;
         }, 400);
-      } catch {
-        if (stop) return;
+      } else {
         setMode("local");
         skip.current = false;
         useCod.setState({ hydrated: true });
@@ -88,6 +99,13 @@ export function useServerSync() {
     return () => {
       stop = true;
     };
+  }, []);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      if (!useCod.getState().hydrated) useCod.setState({ hydrated: true });
+    }, 5000);
+    return () => window.clearTimeout(id);
   }, []);
 
   useEffect(() => {
