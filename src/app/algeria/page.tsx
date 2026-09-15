@@ -23,17 +23,32 @@ export default function AlgeriaPage() {
   );
 
   const sim = useMemo(
-    () =>
-      calcGulfSim({
+    () => {
+      const dr = s.settings.algeriaDelivered;
+      // Weighted shipping per confirmed:
+      //   delivered orders pay algeriaDeliveryDzd
+      //   returned (confirmed but not delivered) pay algeriaReturnDzd
+      const shippingPerConfirmed =
+        (dr * s.settings.algeriaDeliveryDzd +
+          (1 - dr) * s.settings.algeriaReturnDzd) /
+        fx;
+      // Add local call-centre DZD cost on top of platform fees (USD)
+      const simFees = {
+        ...fees,
+        confirmFee: fees.confirmFee + s.settings.algeriaCallCenterDzd / fx,
+      };
+      return calcGulfSim({
         leads: 100,
         productCost: s.stability.algeria.productCost,
         confirmationRate: s.settings.algeriaConfirm,
-        deliveredRate: s.settings.algeriaDelivered,
+        deliveredRate: dr,
         cpl: s.stability.algeria.testCost * (1 + s.stability.algeria.costPct),
         aov: s.stability.algeria.sellingPriceLocal / fx,
-        shippingPerConfirmed: s.settings.algeriaDeliveryDzd / fx,
-        fees,
-      }),
+        shippingPerConfirmed,
+        fees: simFees,
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s.stability.algeria, s.settings, fees, fx]
   );
 
@@ -50,51 +65,51 @@ export default function AlgeriaPage() {
         kicker="ALGERIA · USD + DZD"
         title={t("dz.title")}
         desc={t("sheet.formula")}
-        extra={<Badge tone="gold">1 $ = {fx} د.ج</Badge>}
+        extra={<Badge tone="gold">{t("dz.fxBadge", { fx })}</Badge>}
       />
 
       <Explain id="dz.page" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Kpi label="صافي الدولار" value={money(netUsd)} tone={netUsd > 0 ? "good" : "bad"} help="dz.netUsd" />
-        <Kpi label="صافي الدينار" value={money(netUsd * fx, "DZD", 0)} tone="gold" help="dz.netDzd" />
-        <Kpi label="تأكيد / توصيل" value={`${pct(s.settings.algeriaConfirm)} · ${pct(s.settings.algeriaDelivered)}`} help="dz.confirmDeliver" />
-        <Kpi label="EPD اختبار" value={money(st.oldP.epd)} tone={st.stable ? "good" : "warn"} hint={st.stable ? "Stability" : "تحت العتبة"} help="dz.epd" />
+        <Kpi label={t("dz.netUsd")} value={money(netUsd)} tone={netUsd > 0 ? "good" : "bad"} help="dz.netUsd" />
+        <Kpi label={t("dz.netDzd")} value={money(netUsd * fx, "DZD", 0)} tone="gold" help="dz.netDzd" />
+        <Kpi label={t("dz.confirmDeliver")} value={`${pct(s.settings.algeriaConfirm)} · ${pct(s.settings.algeriaDelivered)}`} help="dz.confirmDeliver" />
+        <Kpi label={t("dz.epdTest")} value={money(st.oldP.epd)} tone={st.stable ? "good" : "warn"} hint={st.stable ? t("calc.stable") : t("dz.below")} help="dz.epd" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 mb-6">
         <div className="card p-5">
-          <h2 className="font-bold mb-3">مدخلات السوق الجزائري</h2>
+          <h2 className="font-bold mb-3">{t("dz.market")}</h2>
           <div className="grid grid-cols-2 gap-3">
-            <Num label="سعر الصرف د.ج / $" value={fx} onChange={(n) => s.patchSettings({ usdToDzd: n })} help="dz.fx" />
-            <Num label="Confirmation" value={s.settings.algeriaConfirm} onChange={(n) => s.patchSettings({ algeriaConfirm: n })} step={0.01} help="dz.confirm" />
-            <Num label="Delivered" value={s.settings.algeriaDelivered} onChange={(n) => s.patchSettings({ algeriaDelivered: n })} step={0.01} help="dz.delivered" />
-            <Num label="توصيل د.ج" value={s.settings.algeriaDeliveryDzd} onChange={(n) => s.patchSettings({ algeriaDeliveryDzd: n })} help="dz.delivery" />
-            <Num label="مرتجع د.ج" value={s.settings.algeriaReturnDzd} onChange={(n) => s.patchSettings({ algeriaReturnDzd: n })} help="dz.return" />
-            <Num label="كول سنتر د.ج" value={s.settings.algeriaCallCenterDzd} onChange={(n) => s.patchSettings({ algeriaCallCenterDzd: n })} help="dz.callCenter" />
+            <Num label={t("dz.fx")} value={fx} onChange={(n) => s.patchSettings({ usdToDzd: n })} help="dz.fx" />
+            <Num label={t("dz.confirmLbl")} value={s.settings.algeriaConfirm} onChange={(n) => s.patchSettings({ algeriaConfirm: n })} step={0.01} help="dz.confirm" />
+            <Num label={t("dz.deliveredLbl")} value={s.settings.algeriaDelivered} onChange={(n) => s.patchSettings({ algeriaDelivered: n })} step={0.01} help="dz.delivered" />
+            <Num label={t("dz.delivery")} value={s.settings.algeriaDeliveryDzd} onChange={(n) => s.patchSettings({ algeriaDeliveryDzd: n })} help="dz.delivery" />
+            <Num label={t("dz.return")} value={s.settings.algeriaReturnDzd} onChange={(n) => s.patchSettings({ algeriaReturnDzd: n })} help="dz.return" />
+            <Num label={t("dz.callCenter")} value={s.settings.algeriaCallCenterDzd} onChange={(n) => s.patchSettings({ algeriaCallCenterDzd: n })} help="dz.callCenter" />
           </div>
         </div>
         <div className="card p-5 lg:col-span-2">
           <h2 className="font-bold mb-3">
-            <LabelHelp id="dz.sim100">محاكاة 100 ليد — عمودين</LabelHelp>
+            <LabelHelp id="dz.sim100">{t("dz.sim100")}</LabelHelp>
           </h2>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-mute">
-                <th className="text-right p-2">البند</th>
-                <th className="p-2">دولار</th>
-                <th className="p-2">دينار</th>
+                <th className="text-right p-2">{t("dz.item")}</th>
+                <th className="p-2">{t("dz.usd")}</th>
+                <th className="p-2">{t("dz.dzd")}</th>
               </tr>
             </thead>
             <tbody>
               {[
-                ["مبيعات COD", sim.sales],
-                ["توصيل (محلي)", sim.shipping],
-                ["كول سنتر", sim.callCenter],
-                ["COD fees", sim.cod],
-                ["إعلانات", sim.ads],
-                ["تكلفة المنتج", sim.productSold],
-                ["ربح", sim.profit],
+                [t("dz.codSales"), sim.sales],
+                [t("dz.localShip"), sim.shipping],
+                [t("dz.cc"), sim.callCenter],
+                [t("dz.codFee"), sim.cod],
+                [t("dz.ads"), sim.ads],
+                [t("dz.pcost"), sim.productSold],
+                [t("dz.profit"), sim.profit],
               ].map(([k, usd]) => (
                 <tr key={String(k)} className="border-t border-line">
                   <td className="p-2">{k as string}</td>
@@ -105,7 +120,7 @@ export default function AlgeriaPage() {
             </tbody>
           </table>
           <p className="text-xs text-mute mt-3">
-            EPD {money(sim.epd)} · بالدينار {money(sim.epd * fx, "DZD", 0)} لكل توصيلة ناجحة
+            {t("dz.epdLine", { usd: money(sim.epd), dzd: money(sim.epd * fx, "DZD", 0) })}
           </p>
         </div>
       </div>
@@ -114,12 +129,12 @@ export default function AlgeriaPage() {
         <table className="w-full text-sm min-w-[800px]">
           <thead className="bg-[#152033]">
             <tr>
-              <th className="p-3 text-right">المنتج</th>
-              <th className="p-3">مبيعات</th>
-              <th className="p-3">ربح $</th>
-              <th className="p-3">ربح د.ج</th>
+              <th className="p-3 text-right">{t("dz.product")}</th>
+              <th className="p-3">{t("dz.sales")}</th>
+              <th className="p-3">{t("dz.profitUsd")}</th>
+              <th className="p-3">{t("dz.profitDzd")}</th>
               <th className="p-3">EPD</th>
-              <th className="p-3">تأكيد</th>
+              <th className="p-3">{t("dz.confirm")}</th>
             </tr>
           </thead>
           <tbody>

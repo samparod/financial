@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useCod } from "@/lib/store";
+import { parseBackup } from "@/lib/backup";
 import type { AppState } from "@/lib/types";
 
 function sliceState(s: {
@@ -42,6 +43,31 @@ export function useServerSync() {
   useEffect(() => {
     let stop = false;
     (async () => {
+      if (typeof window !== "undefined" && window.istiqrar) {
+        try {
+          const raw = await window.istiqrar.load();
+          const parsed = parseBackup(raw);
+          if (!stop && parsed) {
+            useCod.setState({
+              ...sliceState(parsed),
+              hydrated: true,
+            });
+          } else if (!stop) {
+            useCod.setState({ hydrated: true });
+          }
+        } catch {
+          if (!stop) useCod.setState({ hydrated: true });
+        }
+        skip.current = false;
+        setMode("local");
+        return;
+      }
+      if (process.env.NEXT_PUBLIC_LOCAL_ONLY === "1") {
+        skip.current = false;
+        useCod.setState({ hydrated: true });
+        setMode("local");
+        return;
+      }
       try {
         const r = await fetch("/api/state", { cache: "no-store" });
         if (!r.ok) throw new Error("api");
@@ -66,7 +92,21 @@ export function useServerSync() {
 
   useEffect(() => {
     const unsub = useCod.subscribe((s) => {
-      if (skip.current || mode !== "server") return;
+      if (skip.current) return;
+      if (typeof window !== "undefined" && window.istiqrar) {
+        lastLocal.current = Date.now();
+        if (timer.current) window.clearTimeout(timer.current);
+        timer.current = window.setTimeout(() => {
+          window.istiqrar?.save({
+            app: "stability-cod",
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            state: sliceState(s),
+          });
+        }, 500);
+        return;
+      }
+      if (mode !== "server") return;
       lastLocal.current = Date.now();
       if (timer.current) window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => {

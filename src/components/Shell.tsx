@@ -47,6 +47,11 @@ const TABS = [
   { href: "/inventory", key: "nav.inventory", icon: Warehouse },
 ];
 
+function samePath(a: string, b: string) {
+  const n = (p: string) => (p !== "/" && p.endsWith("/") ? p.slice(0, -1) : p);
+  return n(a) === n(b);
+}
+
 function NavLinks({
   onClick,
   compact,
@@ -59,7 +64,7 @@ function NavLinks({
   return (
     <>
       {NAV.map((item) => {
-        const active = path === item.href;
+        const active = samePath(path, item.href);
         const Icon = item.icon;
         return (
           <Link
@@ -175,7 +180,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       >
         <div className="grid grid-cols-5">
           {TABS.map((item) => {
-            const active = path === item.href;
+            const active = samePath(path, item.href);
             const Icon = item.icon;
             return (
               <Link
@@ -210,7 +215,7 @@ function Brand({
   lang,
   setLang,
 }: {
-  t: (k: string) => string;
+  t: (k: string, vars?: Record<string, string | number>) => string;
   lang: string;
   setLang: (l: "ar" | "fr" | "en") => void;
 }) {
@@ -244,16 +249,28 @@ function SyncFoot({
   helpOn,
   setHelpOn,
 }: {
-  t: (k: string) => string;
+  t: (k: string, vars?: Record<string, string | number>) => string;
   sync: string;
   helpOn: boolean;
   setHelpOn: (v: boolean) => void;
 }) {
+  // Use state to avoid hydration mismatch — window.istiqrar is only available client-side
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    setIsDesktop(typeof window !== "undefined" && !!window.istiqrar);
+  }, []);
+
   return (
     <div className="p-4 text-[11px] text-mute border-t border-line space-y-2">
       <div>{t("brand.foot")}</div>
       <div className={sync === "server" ? "text-profit" : sync === "offline" ? "text-danger" : "text-mute"}>
-        {sync === "server" ? t("sync.server") : sync === "offline" ? t("sync.offline") : t("sync.local")}
+        {sync === "server"
+          ? t("sync.server")
+          : sync === "offline"
+            ? t("sync.offline")
+            : isDesktop
+              ? t("sync.desktop")
+              : t("sync.local")}
       </div>
       <button
         type="button"

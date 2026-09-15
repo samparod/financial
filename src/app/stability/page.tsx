@@ -185,7 +185,7 @@ function Scenario({
   cur,
   sc,
 }: {
-  t: (k: string) => string;
+  t: (k: string, vars?: Record<string, string | number>) => string;
   title: string;
   local: number;
   cur: string;

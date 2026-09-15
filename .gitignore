@@ -1,6 +1,8 @@
 node_modules
 .next
 out
+dist-desktop
+.desktop-build
 data/state.json
 .env
 dev-server.log

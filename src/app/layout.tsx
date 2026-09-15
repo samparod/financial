@@ -4,6 +4,8 @@ import "./globals.css";
 import { Shell } from "@/components/Shell";
 import { TelegramWebApp } from "@/components/TelegramWebApp";
 
+const isDesktop = process.env.NEXT_PUBLIC_ELECTRON === "1";
+
 export const metadata: Metadata = {
   title: "Stability COD · استقرار",
   description: "نظام إدارة حسابات COD للخليج والجزائر",
@@ -22,8 +24,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ar" dir="rtl">
       <body>
-        <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
-        <TelegramWebApp />
+        {!isDesktop && (
+          <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+        )}
+        {!isDesktop && <TelegramWebApp />}
         <Shell>{children}</Shell>
       </body>
     </html>

@@ -12,6 +12,7 @@ const SYM: Record<Currency, string> = {
 };
 
 export function money(n: number, currency: Currency = "USD", digits = 2) {
+  if (!Number.isFinite(n)) return "—";
   const abs = Math.abs(n);
   const formatted = abs.toLocaleString("en-US", {
     minimumFractionDigits: digits,

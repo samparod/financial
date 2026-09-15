@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCod } from "@/lib/store";
 import { calcPl, opsTotal } from "@/lib/cod";
 import { money } from "@/lib/format";
@@ -28,8 +28,16 @@ export default function CashflowPage() {
     category: "ads",
     label: "",
     amount: 0,
-    currency: (region === "algeria" ? "DZD" : "USD") as Currency,
+    currency: "USD" as Currency,
   });
+
+  // Sync draft currency when region changes
+  useEffect(() => {
+    setDraft((prev) => ({
+      ...prev,
+      currency: region === "algeria" ? "DZD" : "USD",
+    }));
+  }, [region]);
 
   const rows = s.cash.filter((c) => c.region === region);
   const fx = s.settings.usdToDzd;
@@ -56,11 +64,11 @@ export default function CashflowPage() {
       <PageHead
         kicker="CASH FLOW"
         title={t("cf.title")}
-        desc="الربح المحاسبي ليس الكاش. هنا دخول تحصيل COD وخروج الإعلانات، الشحن، الرواتب، وعلي بابا — بالدولار أو الدينار."
+        desc={t("cf.desc")}
         extra={
           <div className="flex gap-2">
-            <Btn tone={region === "gulf" ? "gold" : "ghost"} onClick={() => setRegion("gulf")}>الخليج</Btn>
-            <Btn tone={region === "algeria" ? "gold" : "ghost"} onClick={() => setRegion("algeria")}>الجزائر</Btn>
+            <Btn tone={region === "gulf" ? "gold" : "ghost"} onClick={() => setRegion("gulf")}>{t("sheet.gulf")}</Btn>
+            <Btn tone={region === "algeria" ? "gold" : "ghost"} onClick={() => setRegion("algeria")}>{t("sheet.algeria")}</Btn>
           </div>
         }
       />
@@ -68,26 +76,26 @@ export default function CashflowPage() {
       <Explain id="cf.page" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Kpi label="دخول" value={money(inflow)} tone="good" help="cf.in" />
-        <Kpi label="خروج" value={money(outflow)} tone="bad" help="cf.out" />
-        <Kpi label="صافي الكاش" value={money(net)} tone={net >= 0 ? "good" : "bad"} help="cf.net" />
-        <Kpi label="ربح P&L − تشغيل" value={money(plProfit - opsTotal(ops))} tone="gold" help="cf.plGap" />
+        <Kpi label={t("cf.in")} value={money(inflow)} tone="good" help="cf.in" />
+        <Kpi label={t("cf.out")} value={money(outflow)} tone="bad" help="cf.out" />
+        <Kpi label={t("cf.net")} value={money(net)} tone={net >= 0 ? "good" : "bad"} help="cf.net" />
+        <Kpi label={t("cf.plGap")} value={money(plProfit - opsTotal(ops))} tone="gold" help="cf.plGap" />
       </div>
       {region === "algeria" && (
         <p className="text-sm text-mute mb-4">
-          صافي الكاش بالدينار التقريبي: <b className="text-gold">{money(net * fx, "DZD", 0)}</b>
+          {t("cf.netDzd")} <b className="text-gold">{money(net * fx, "DZD", 0)}</b>
         </p>
       )}
 
       <div className="grid lg:grid-cols-3 gap-4 mb-6">
         <div className="card p-5">
-          <h2 className="font-bold mb-3">حركة جديدة</h2>
+          <h2 className="font-bold mb-3">{t("cf.newMove")}</h2>
           <div className="space-y-3">
-            <TextField label="البيان" value={draft.label} onChange={(v) => setDraft({ ...draft, label: v })} help="cf.label" />
-            <Num label="المبلغ" value={draft.amount} onChange={(n) => setDraft({ ...draft, amount: n })} help="cf.amount" />
+            <TextField label={t("cf.label")} value={draft.label} onChange={(v) => setDraft({ ...draft, label: v })} help="cf.label" />
+            <Num label={t("cf.amount")} value={draft.amount} onChange={(n) => setDraft({ ...draft, amount: n })} help="cf.amount" />
             <LabelHelp id="cf.date">
               <label className="block text-[11px] text-mute">
-                التاريخ
+                {t("cf.th.date")}
                 <input
                   type="date"
                   className="sheet-input mt-1"
@@ -103,20 +111,20 @@ export default function CashflowPage() {
                 value={draft.type}
                 onChange={(e) => setDraft({ ...draft, type: e.target.value as CashEntry["type"] })}
               >
-                <option value="in">دخول</option>
-                <option value="out">خروج</option>
+                <option value="in">{t("common.in")}</option>
+                <option value="out">{t("common.out")}</option>
               </select>
               <select
                 className="sheet-input"
                 value={draft.category}
                 onChange={(e) => setDraft({ ...draft, category: e.target.value })}
               >
-                <option value="cod">تحصيل COD</option>
-                <option value="ads">إعلانات</option>
-                <option value="product">بضاعة / علي بابا</option>
-                <option value="shipping">شحن وتوصيل</option>
-                <option value="ops">تشغيل ورواتب</option>
-                <option value="other">أخرى</option>
+                <option value="cod">{t("cf.cat.cod")}</option>
+                <option value="ads">{t("cf.cat.ads")}</option>
+                <option value="product">{t("cf.cat.product")}</option>
+                <option value="shipping">{t("cf.cat.shipping")}</option>
+                <option value="ops">{t("cf.cat.ops")}</option>
+                <option value="other">{t("cf.cat.other")}</option>
               </select>
             </div>
             <select
@@ -124,9 +132,9 @@ export default function CashflowPage() {
                 value={draft.currency}
                 onChange={(e) => setDraft({ ...draft, currency: e.target.value as Currency })}
               >
-                <option value="USD">دولار</option>
-                <option value="DZD">دينار</option>
-                <option value="SAR">ريال</option>
+                <option value="USD">{t("cf.usd")}</option>
+                <option value="DZD">{t("cf.dzd")}</option>
+                <option value="SAR">{t("cf.sar")}</option>
               </select>
             <Btn
               tone="gold"
@@ -136,12 +144,12 @@ export default function CashflowPage() {
                 setDraft({ ...draft, label: "", amount: 0 });
               }}
             >
-              تسجيل
+              {t("cf.save")}
             </Btn>
           </div>
         </div>
         <div className="card p-5 lg:col-span-2">
-          <h2 className="font-bold mb-3">حسب التصنيف</h2>
+          <h2 className="font-bold mb-3">{t("cf.byCat")}</h2>
           <Explain id="cf.byCat" open={false} />
           <div className="space-y-2">
             {byCat.map(([k, v]) => (
@@ -154,7 +162,12 @@ export default function CashflowPage() {
             ))}
           </div>
           <p className="text-xs text-mute mt-4">
-            تشغيل ثابت هذا الشهر: {money(opsTotal(ops))} — رواتب {money(ops.salaries)} · كراء {money(ops.rent)} · إدارة {money(ops.management)}
+            {t("cf.fixedOps", {
+              ops: money(opsTotal(ops)),
+              sal: money(ops.salaries),
+              rent: money(ops.rent),
+              mgmt: money(ops.management),
+            })}
           </p>
         </div>
       </div>
@@ -163,12 +176,12 @@ export default function CashflowPage() {
         <table className="w-full text-sm">
           <thead className="bg-[#152033]">
             <tr>
-              <th className="p-3 text-right">التاريخ</th>
-              <th className="p-3 text-right">البيان</th>
-              <th className="p-3">نوع</th>
-              <th className="p-3">تصنيف</th>
-              <th className="p-3">المبلغ</th>
-              <th className="p-3">بالدولار</th>
+              <th className="p-3 text-right">{t("cf.th.date")}</th>
+              <th className="p-3 text-right">{t("cf.th.label")}</th>
+              <th className="p-3">{t("cf.th.type")}</th>
+              <th className="p-3">{t("cf.th.cat")}</th>
+              <th className="p-3">{t("cf.th.amount")}</th>
+              <th className="p-3">{t("cf.th.usd")}</th>
               <th />
             </tr>
           </thead>
@@ -178,13 +191,13 @@ export default function CashflowPage() {
                 <td className="p-3">{c.date}</td>
                 <td className="p-3">{c.label}</td>
                 <td className="p-3">
-                  <Badge tone={c.type === "in" ? "good" : "bad"}>{c.type === "in" ? "دخول" : "خروج"}</Badge>
+                  <Badge tone={c.type === "in" ? "good" : "bad"}>{c.type === "in" ? t("common.in") : t("common.out")}</Badge>
                 </td>
-                <td className="p-3 text-mute">{c.category}</td>
+                <td className="p-3 text-mute">{t(`cf.cat.${c.category}`)}</td>
                 <td className="p-3">{money(c.amount, c.currency)}</td>
                 <td className="p-3">{money(toUsd(c))}</td>
                 <td className="p-3">
-                  <button className="text-xs text-danger" onClick={() => s.removeCash(c.id)}>حذف</button>
+                  <button className="text-xs text-danger" onClick={() => s.removeCash(c.id)}>{t("common.delete")}</button>
                 </td>
               </tr>
             ))}

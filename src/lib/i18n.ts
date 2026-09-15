@@ -1,3 +1,5 @@
+import { extraUi } from "./i18n-ui";
+
 export type Lang = "ar" | "fr" | "en";
 
 export const LANGS: { id: Lang; label: string }[] = [
@@ -116,7 +118,7 @@ const ar: Record<string, string> = {
   "nav.menu": "القائمة",
   "sync.server": "محفوظ مع التيليغرام / السيرفر",
   "sync.offline": "السيرفر غير متصل",
-  "sync.local": "حفظ محلي في المتصفح",
+  "sync.local": "محفوظ على هذا المتصفح — مثل دفتر في الجهاز",
   "calc.fromSheet": "استيراد من الشيت",
   "calc.beSub": "التعادل من 35% توصيل",
   "calc.competeSub": "إذا نقصت السعر، ما زال ربح؟",
@@ -129,6 +131,13 @@ const ar: Record<string, string> = {
   "cf.cat.ops": "تشغيل ورواتب",
   "cf.cat.other": "أخرى",
   "ab.landedStock": "وصلت للمخزن: الكمية والتكلفة الواصلة انضافو للمخزون",
+  "set.backup": "ملفك على جهازك",
+  "set.backupDesc": "مثل وورد: تحفظ نسخة على الكمبيوتر. السيرفر ما ياخذش هذا الملف إلا إذا كنت متصل بنسختك على الموقع.",
+  "set.saveFile": "حفظ ملف على الكمبيوتر",
+  "set.loadFile": "فتح ملف من الكمبيوتر",
+  "set.backupOk": "تم فتح الملف.",
+  "set.backupBad": "الملف ما تفهمش. اختار ملف استقرار JSON.",
+  "set.dataDir": "مجلد الحفظ على هذا الجهاز",
 };
 
 const fr: Record<string, string> = {
@@ -241,7 +250,7 @@ const fr: Record<string, string> = {
   "nav.menu": "Menu",
   "sync.server": "Enregistré avec Telegram / serveur",
   "sync.offline": "Serveur hors ligne",
-  "sync.local": "Sauvegarde locale dans le navigateur",
+  "sync.local": "Enregistré dans ce navigateur — comme un cahier sur l’appareil",
   "calc.fromSheet": "Importer depuis la feuille",
   "calc.beSub": "Seuil à 35 % livré",
   "calc.competeSub": "Si vous baissez le prix, encore du profit ?",
@@ -254,6 +263,13 @@ const fr: Record<string, string> = {
   "cf.cat.ops": "Bureau / salaires",
   "cf.cat.other": "Autre",
   "ab.landedStock": "En stock : quantité et coût arrivé ajoutés à l’inventaire",
+  "set.backup": "Votre fichier, sur votre PC",
+  "set.backupDesc": "Comme Word : vous enregistrez une copie sur l’ordinateur. Aucun serveur ne reçoit ce fichier.",
+  "set.saveFile": "Enregistrer un fichier",
+  "set.loadFile": "Ouvrir un fichier",
+  "set.backupOk": "Fichier chargé.",
+  "set.backupBad": "Fichier illisible. Choisissez un JSON Istiqrar.",
+  "set.dataDir": "Dossier d’enregistrement sur cet appareil",
 };
 
 const en: Record<string, string> = {
@@ -366,7 +382,7 @@ const en: Record<string, string> = {
   "nav.menu": "Menu",
   "sync.server": "Saved with Telegram / server",
   "sync.offline": "Server offline",
-  "sync.local": "Saved in this browser only",
+  "sync.local": "Saved in this browser — like a notebook on the device",
   "calc.fromSheet": "Import from sheet",
   "calc.beSub": "Break even from 35% delivered",
   "calc.competeSub": "If you drop the price, still profit?",
@@ -379,10 +395,27 @@ const en: Record<string, string> = {
   "cf.cat.ops": "Ops / salaries",
   "cf.cat.other": "Other",
   "ab.landedStock": "In stock: qty and landed cost added to inventory",
+  "set.backup": "Your file, on your computer",
+  "set.backupDesc": "Like Word: save a copy on the PC. No server receives this file.",
+  "set.saveFile": "Save file to computer",
+  "set.loadFile": "Open file from computer",
+  "set.backupOk": "File loaded.",
+  "set.backupBad": "Could not read that file. Pick an Istiqrar JSON.",
+  "set.dataDir": "Save folder on this computer",
 };
 
-const DICT: Record<Lang, Record<string, string>> = { ar, fr, en };
+const DICT: Record<Lang, Record<string, string>> = {
+  ar: { ...ar, ...extraUi.ar },
+  fr: { ...fr, ...extraUi.fr },
+  en: { ...en, ...extraUi.en },
+};
 
-export function tr(lang: Lang, key: string) {
-  return DICT[lang][key] ?? en[key] ?? key;
+export type TVars = Record<string, string | number>;
+
+export function tr(lang: Lang, key: string, vars?: TVars) {
+  let s = DICT[lang][key] ?? DICT.en[key] ?? key;
+  if (vars) {
+    s = s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? String(vars[k]) : `{${k}}`));
+  }
+  return s;
 }

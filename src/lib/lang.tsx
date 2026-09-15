@@ -1,12 +1,12 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { tr, type Lang } from "./i18n";
+import { tr, type Lang, type TVars } from "./i18n";
 
 const LangCtx = createContext<{
   lang: Lang;
   setLang: (l: Lang) => void;
-  t: (key: string) => string;
+  t: (key: string, vars?: TVars) => string;
   helpOn: boolean;
   setHelpOn: (v: boolean) => void;
 } | null>(null);
@@ -38,7 +38,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <LangCtx.Provider value={{ lang, setLang, t: (k) => tr(lang, k), helpOn, setHelpOn }}>
+    <LangCtx.Provider value={{ lang, setLang, t: (k, vars) => tr(lang, k, vars), helpOn, setHelpOn }}>
       {children}
     </LangCtx.Provider>
   );

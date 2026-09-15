@@ -81,61 +81,61 @@ export default function GulfPage() {
               country === c.id ? "border-gold bg-gold/15 text-gold" : "border-line text-mute"
             }`}
           >
-            {c.nameAr}
+            {t(`gulf.c.${c.id}`)}
           </button>
         ))}
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 mb-6">
         <div className="card p-5 lg:col-span-1">
-          <h2 className="font-bold mb-3">{profile.nameAr}</h2>
-          <p className="text-xs text-mute mb-4">{profile.note}</p>
+          <h2 className="font-bold mb-3">{t(`gulf.c.${profile.id}`)}</h2>
+          <p className="text-xs text-mute mb-4">{t(`gulf.n.${profile.id}`)}</p>
           <div className="space-y-2 text-sm">
-            <Line k="نسبة التوصيل المتوقعة" v={`${Math.round(profile.deliveredMin * 100)}–${Math.round(profile.deliveredMax * 100)}%`} />
-            <Line k="مدة التوصيل" v={`${profile.transitMin}–${profile.transitMax} أيام`} />
-            <Line k="شحن لكل مؤكَّد" v={money(profile.shippingPerConfirmed)} />
-            <Line k="سعر الصرف إلى الدولار" v={`1 ${profile.currency} = ${(1 / profile.fxToUsd).toFixed(3)} $`} />
+            <Line k={t("gulf.expectedDr")} v={`${Math.round(profile.deliveredMin * 100)}–${Math.round(profile.deliveredMax * 100)}%`} />
+            <Line k={t("gulf.transit")} v={t("gulf.transitVal", { min: profile.transitMin, max: profile.transitMax })} />
+            <Line k={t("gulf.shipPer")} v={money(profile.shippingPerConfirmed)} />
+            <Line k={t("gulf.fxLine")} v={t("gulf.fxVal", { cur: profile.currency, n: (1 / profile.fxToUsd).toFixed(3) })} />
           </div>
           <div className="grid grid-cols-2 gap-3 mt-5">
             <Num label="Leads" value={leads} onChange={setLeads} help="gulf.leads" />
-            <Num label="تكلفة المنتج $" value={productCost} onChange={setProductCost} step={0.1} help="gulf.productCost" />
+            <Num label={t("gulf.productCost")} value={productCost} onChange={setProductCost} step={0.1} help="gulf.productCost" />
             <Num label="Confirmation" value={cr} onChange={setCr} step={0.01} help="gulf.cr" />
             <Num label="Delivered Rate" value={dr} onChange={setDr} step={0.01} help="gulf.dr" />
             <Num label="CPL / CPP $" value={cpl} onChange={setCpl} step={0.1} help="gulf.cpl" />
-            <Num label={`سعر البيع ${profile.currency}`} value={aovLocal} onChange={setAovLocal} help="gulf.price" />
+            <Num label={t("gulf.sellPrice", { cur: profile.currency })} value={aovLocal} onChange={setAovLocal} help="gulf.price" />
           </div>
         </div>
 
         <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3 content-start">
-          <Kpi label="مؤكَّد" value={String(Math.round(r.confirmed))} help="gulf.confirmed" />
-          <Kpi label="مسلَّم" value={String(Math.round(r.delivered))} help="gulf.delivered" />
-          <Kpi label="المبيعات USD" value={money(r.sales)} tone="gold" hint={`${money(r.sales * profile.fxToUsd, profile.currency, 0)}`} help="gulf.sales" />
+          <Kpi label={t("gulf.confirmed")} value={String(Math.round(r.confirmed))} help="gulf.confirmed" />
+          <Kpi label={t("gulf.delivered")} value={String(Math.round(r.delivered))} help="gulf.delivered" />
+          <Kpi label={t("gulf.salesUsd")} value={money(r.sales)} tone="gold" hint={`${money(r.sales * profile.fxToUsd, profile.currency, 0)}`} help="gulf.sales" />
           <Kpi label="EPD" value={money(r.epd)} tone={r.epd >= 10 ? "good" : r.epd > 0 ? "warn" : "bad"} help="gulf.epd" />
-          <Kpi label="الشحن" value={money(r.shipping)} help="gulf.shipping" />
-          <Kpi label="كول سنتر + إضافي" value={money(r.callCenter)} help="gulf.callCenter" />
-          <Kpi label="رسوم COD 5%" value={money(r.cod)} help="gulf.cod" />
-          <Kpi label="إعلانات" value={money(r.ads)} help="gulf.ads" />
-          <Kpi label="تكلفة البضاعة" value={money(r.productSold)} help="gulf.productSold" />
-          <Kpi label="الاستثمار" value={money(r.invest)} help="gulf.invest" />
-          <Kpi label="الربح" value={money(r.profit)} tone={r.profit > 0 ? "good" : "bad"} help="gulf.profit" />
-          <Kpi label="ROI" value={pct(r.roi)} tone={r.roi > 0.3 ? "good" : "warn"} hint={`هامش ${pct(r.margin)}`} help="gulf.roi" />
+          <Kpi label={t("gulf.shipping")} value={money(r.shipping)} help="gulf.shipping" />
+          <Kpi label={t("gulf.callCenter")} value={money(r.callCenter)} help="gulf.callCenter" />
+          <Kpi label={t("gulf.cod")} value={money(r.cod)} help="gulf.cod" />
+          <Kpi label={t("gulf.ads")} value={money(r.ads)} help="gulf.ads" />
+          <Kpi label={t("gulf.productSold")} value={money(r.productSold)} help="gulf.productSold" />
+          <Kpi label={t("gulf.invest")} value={money(r.invest)} help="gulf.invest" />
+          <Kpi label={t("gulf.profit")} value={money(r.profit)} tone={r.profit > 0 ? "good" : "bad"} help="gulf.profit" />
+          <Kpi label="ROI" value={pct(r.roi)} tone={r.roi > 0.3 ? "good" : "warn"} hint={t("gulf.margin", { pct: pct(r.margin) })} help="gulf.roi" />
         </div>
       </div>
 
       <div className="card p-5">
         <h2 className="font-bold mb-3">
-          <LabelHelp id="gulf.compare">مقارنة الدول بنفس المدخلات</LabelHelp>
+          <LabelHelp id="gulf.compare">{t("gulf.compare")}</LabelHelp>
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-mute text-right">
-                <th className="p-2">الدولة</th>
-                <th className="p-2">توصيل نموذجي</th>
-                <th className="p-2">مسلَّم</th>
-                <th className="p-2">ربح</th>
+                <th className="p-2">{t("gulf.country")}</th>
+                <th className="p-2">{t("gulf.typicalDr")}</th>
+                <th className="p-2">{t("gulf.delivered")}</th>
+                <th className="p-2">{t("gulf.profit")}</th>
                 <th className="p-2">EPD</th>
-                <th className="p-2">الحكم</th>
+                <th className="p-2">{t("gulf.verdict")}</th>
               </tr>
             </thead>
             <tbody>
@@ -152,14 +152,14 @@ export default function GulfPage() {
                 });
                 return (
                   <tr key={c.id} className="border-t border-line">
-                    <td className="p-2 font-semibold">{c.nameAr}</td>
+                    <td className="p-2 font-semibold">{t(`gulf.c.${c.id}`)}</td>
                     <td className="p-2">{pct((c.deliveredMin + c.deliveredMax) / 2)}</td>
                     <td className="p-2">{Math.round(sim.delivered)}</td>
                     <td className={`p-2 ${sim.profit > 0 ? "text-profit" : "text-danger"}`}>{money(sim.profit)}</td>
-                    <td className="p-2 text-profit">{money(sim.epd)}</td>
+                    <td className={`p-2 ${sim.epd > 0 ? "text-profit" : "text-danger"}`}>{money(sim.epd)}</td>
                     <td className="p-2">
                       <Badge tone={sim.epd >= 10 ? "good" : sim.profit > 0 ? "warn" : "bad"}>
-                        {sim.epd >= 10 ? "قابل للتوسع" : sim.profit > 0 ? "اختبر بحذر" : "لا"}
+                        {sim.epd >= 10 ? t("gulf.scale") : sim.profit > 0 ? t("gulf.careful") : t("gulf.no")}
                       </Badge>
                     </td>
                   </tr>

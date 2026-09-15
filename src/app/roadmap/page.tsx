@@ -9,7 +9,7 @@ import { Explain, Tip } from "@/components/Explain";
 import { useT } from "@/lib/lang";
 
 export default function RoadmapPage() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const stock = useCod((s) => s.stock);
   const [id, setId] = useState(stock[0]?.id ?? "");
   const item = stock.find((x) => x.id === id) ?? stock[0];
@@ -20,7 +20,7 @@ export default function RoadmapPage() {
   if (!item || !path) {
     return (
       <div className="p-8">
-        <p className="text-mute">أضف صنفاً في المخزون أولاً.</p>
+        <p className="text-mute">{t("road.addFirst")}</p>
       </div>
     );
   }
@@ -30,7 +30,7 @@ export default function RoadmapPage() {
       <PageHead
         kicker="THE PATH"
         title={t("road.title")}
-        desc="من اليوم 1 حتى نفاد المخزون. القوس يوضح يوم الصفر، ومتى يجب أن تطلب، ومتى تصل الشحنة إذا طلبت اليوم."
+        desc={t("road.desc")}
         extra={
           <select
             value={item.id}
@@ -51,10 +51,10 @@ export default function RoadmapPage() {
       <div className="card p-5 mb-6">
         <Explain id="road.timeline" />
         <div className="flex justify-between text-sm text-mute mb-4">
-          <span>Day 1 · مخزون {item.qty}</span>
-          <span>{item.dailySales} قطعة / يوم</span>
-          <span>Stock 0 · يوم {path.stockZeroDay}</span>
-          <span>يوم 31–32</span>
+          <span>{t("road.day1", { qty: item.qty })}</span>
+          <span>{t("road.pcsDay", { n: item.dailySales })}</span>
+          <span>{t("road.stock0", { n: path.stockZeroDay })}</span>
+          <span>{t("road.days3132")}</span>
         </div>
         <div className="relative pt-8 pb-10">
           <div className="absolute top-10 right-0 left-0 h-px bg-line" />
@@ -87,19 +87,19 @@ export default function RoadmapPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-4 text-xs">
-          <Legend c="#17324a" t="مخزون متبقٍ" />
-          <Legend c="#e8a317" t="آخر يوم للطلب" />
-          <Legend c="#e85d5d" t="المخزون صفر" />
+          <Legend c="#17324a" t={t("road.legendRemain")} />
+          <Legend c="#e8a317" t={t("road.legendOrder")} />
+          <Legend c="#e85d5d" t={t("road.legendZero")} />
         </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="card p-5">
-          <h2 className="font-bold mb-3">تقويم {monthName(today)}</h2>
+          <h2 className="font-bold mb-3">{t("road.cal", { month: monthName(today, lang) })}</h2>
           <Explain id="road.calendar" open={false} />
           <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-mute mb-1">
-            {["أحد", "إثن", "ثلا", "أرب", "خمي", "جمع", "سبت"].map((d) => (
-              <div key={d}>{d}</div>
+            {["cal.sun", "cal.mon", "cal.tue", "cal.wed", "cal.thu", "cal.fri", "cal.sat"].map((d) => (
+              <div key={d}>{t(d)}</div>
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
@@ -129,25 +129,22 @@ export default function RoadmapPage() {
           </div>
         </div>
         <div className="card p-5">
-          <h2 className="font-bold mb-3">قراءة الطريق</h2>
+          <h2 className="font-bold mb-3">{t("road.read")}</h2>
           <ol className="space-y-3 text-sm">
             <li>
-              <b>اليوم 1.</b> عندك {item.qty} قطعة. كل يوم يخرج {item.dailySales}.
+              <b>{t("road.today1", { qty: item.qty, daily: item.dailySales })}</b>
             </li>
             <li>
-              <b>يوم الطلب.</b>{" "}
-              {path.orderByDay < 1
-                ? "فات وقت الطلب الآمن. اطلب اليوم حتى لو وصل بعد النفاد."
-                : `آخر يوم آمن للطلب هو اليوم ${path.orderByDay} حتى تصل الشحنة قبل الصفر.`}
+              <b>{t("road.orderTitle")}</b>{" "}
+              {path.orderByDay < 1 ? t("road.orderLate") : t("road.orderSafe", { n: path.orderByDay })}
               <Tip id="road.orderDay" />
             </li>
             <li>
-              <b>Stock 0.</b> القوس يصل للصفر يوم {path.stockZeroDay}. بعدها المبيعات تتوقف.
+              <b>{t("road.zeroTitle")}</b> {t("road.zeroBody", { n: path.stockZeroDay })}
               <Tip id="road.zero" />
             </li>
             <li>
-              <b>وصول شحنة اليوم.</b> إذا طلبت الآن من علي بابا، الوصول بعد {item.leadTimeDays} يوم
-              (إنتاج + شحن + جمارك).
+              <b>{t("road.arriveTitle")}</b> {t("road.arriveBody", { n: item.leadTimeDays })}
               <Tip id="road.arrival" />
             </li>
           </ol>
@@ -186,6 +183,7 @@ function buildMonth(year: number, month: number) {
   return cells;
 }
 
-function monthName(d: Date) {
-  return d.toLocaleDateString("ar-DZ", { month: "long", year: "numeric" });
+function monthName(d: Date, lang: string) {
+  const loc = lang === "ar" ? "ar-DZ" : lang === "fr" ? "fr-FR" : "en-US";
+  return d.toLocaleDateString(loc, { month: "long", year: "numeric" });
 }

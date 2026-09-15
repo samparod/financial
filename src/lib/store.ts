@@ -39,6 +39,7 @@ interface Store extends AppState {
   addWinner: (region: Region) => void;
   removeWinner: (id: string) => void;
   reset: () => void;
+  importState: (data: AppState) => void;
 }
 
 function uid() {
@@ -240,6 +241,17 @@ export const useCod = create<Store>()(
         })),
       removeWinner: (id) => set((s) => ({ winners: s.winners.filter((x) => x.id !== id) })),
       reset: () => set({ ...SEED }),
+      importState: (data) =>
+        set({
+          settings: data.settings,
+          plProducts: data.plProducts,
+          operations: data.operations,
+          stability: data.stability,
+          stock: data.stock,
+          cash: data.cash,
+          shipments: data.shipments,
+          winners: data.winners,
+        }),
     }),
     {
       name: "lmofid-cod-v1",

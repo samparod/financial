@@ -65,12 +65,12 @@ export default function HomePage() {
       <div className="grid lg:grid-cols-3 gap-4 mb-6">
         <div className="card p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold">قرار المخزون الآن</h2>
-            <Link href="/inventory" className="text-xs text-gold">إدارة المخزون</Link>
+            <h2 className="font-bold">{t("home.stockNow")}</h2>
+            <Link href="/inventory" className="text-xs text-gold">{t("home.manageStock")}</Link>
           </div>
           <Explain id="home.stockDecision" open={false} />
           {alerts.length === 0 ? (
-            <p className="text-sm text-mute">المخزون كافٍ. لا يوجد طلب عاجل اليوم.</p>
+            <p className="text-sm text-mute">{t("home.stockOk")}</p>
           ) : (
             <div className="space-y-2">
               {alerts.map(({ item, path }) => (
@@ -78,11 +78,11 @@ export default function HomePage() {
                   <div>
                     <div className="font-semibold">{item.name}</div>
                     <div className="text-xs text-mute">
-                      {item.qty} قطعة · {item.dailySales}/يوم · ينتهي يوم {path.stockZeroDay}
+                      {t("home.stockLine", { qty: item.qty, daily: item.dailySales, day: path.stockZeroDay })}
                     </div>
                   </div>
                   <Badge tone={path.advice === "order_now" ? "bad" : "warn"}>
-                    {path.advice === "order_now" ? "اطلب الآن" : "خطط للطلب"}
+                    {path.advice === "order_now" ? t("home.orderNow") : t("home.planOrder")}
                   </Badge>
                 </div>
               ))}
@@ -90,13 +90,13 @@ export default function HomePage() {
           )}
         </div>
         <div className="card p-5">
-          <h2 className="font-bold mb-3">مؤشر الاستقرار</h2>
+          <h2 className="font-bold mb-3">{t("home.stabilityTitle")}</h2>
           <Explain id="home.stabilityIndex" open={false} />
-          <Row k="الخليج" v={stG.stable ? "Stability" : "غير مستقر"} ok={stG.stable} />
-          <Row k="الجزائر" v={stDz.stable ? "Stability" : "غير مستقر"} ok={stDz.stable} />
-          <Row k="التعادل من" v={`${Math.round(stG.breakevenDr * 100)}% توصيل`} ok={stG.breakevenDr <= 0.35} />
-          <Row k="قابلية خفض السعر" v={stG.competitive ? "ما زال رابح" : "هامش ضعيف"} ok={stG.competitive} />
-          <Link href="/stability" className="text-xs text-gold mt-3 inline-block">فتح حاسبة الاستقرار</Link>
+          <Row k={t("sheet.gulf")} v={stG.stable ? t("calc.stable") : t("home.unstable")} ok={stG.stable} />
+          <Row k={t("sheet.algeria")} v={stDz.stable ? t("calc.stable") : t("home.unstable")} ok={stDz.stable} />
+          <Row k={t("home.breakevenFrom")} v={t("home.breakevenVal", { pct: Math.round(stG.breakevenDr * 100) })} ok={stG.breakevenDr <= 0.35} />
+          <Row k={t("home.priceCut")} v={stG.competitive ? t("home.stillProfit") : t("home.weakMargin")} ok={stG.competitive} />
+          <Link href="/stability" className="text-xs text-gold mt-3 inline-block">{t("home.openCalc")}</Link>
         </div>
       </div>
 
