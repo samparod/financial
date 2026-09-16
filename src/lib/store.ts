@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SEED } from "./seed";
-import { landedCost } from "./cod";
+import { landedCost, migrateSettings } from "./cod";
 import type {
   AlibabaShipment,
   AppState,
@@ -265,8 +265,20 @@ export const useCod = create<Store>()(
         shipments: s.shipments,
         winners: s.winners,
       }),
-      onRehydrateStorage: () => () => {
-        useCod.setState({ hydrated: true });
+      // Settings gained new sub-objects over time. Persisted state replaces the
+      // defaults wholesale, so fill any gap instead of losing what the user saved.
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<AppState>;
+        return {
+          ...current,
+          ...saved,
+          settings: migrateSettings(saved.settings, current.settings),
+        };
+      },
+      // Runs synchronously inside create(), so the `useCod` binding does not
+      // exist yet — go through the rehydrated state instead.
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true);
       },
     }
   )

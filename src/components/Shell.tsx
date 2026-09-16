@@ -24,6 +24,7 @@ import { useEffect, useState } from "react";
 import { LangProvider, useT } from "@/lib/lang";
 import { LANGS } from "@/lib/i18n";
 import { useServerSync } from "@/lib/sync";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const NAV = [
   { href: "/", key: "nav.home", icon: LayoutDashboard },
@@ -283,10 +284,26 @@ function SyncFoot({
   );
 }
 
+function ShellBoundary({ children }: { children: React.ReactNode }) {
+  const { t } = useT();
+  return (
+    <ErrorBoundary
+      title={t("err.title")}
+      body={t("err.body")}
+      reload={t("err.reload")}
+      details={t("err.details")}
+    >
+      {children}
+    </ErrorBoundary>
+  );
+}
+
 export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <LangProvider>
-      <ShellInner>{children}</ShellInner>
+      <ShellBoundary>
+        <ShellInner>{children}</ShellInner>
+      </ShellBoundary>
     </LangProvider>
   );
 }

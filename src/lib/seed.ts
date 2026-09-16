@@ -1,5 +1,5 @@
 import type { AppState } from "./types";
-import { DEFAULT_GULF_FEES } from "./cod";
+import { DEFAULT_GULF_FEES, DEFAULT_PRICING } from "./cod";
 
 const today = "2026-08-28";
 
@@ -19,6 +19,7 @@ export const SEED: AppState = {
       deliveredFee: 1.2,
       codPercent: 0.04,
     },
+    pricing: { ...DEFAULT_PRICING },
   },
   plProducts: [
     {

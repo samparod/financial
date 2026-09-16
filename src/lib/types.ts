@@ -20,6 +20,13 @@ export type ShipmentStatus =
 
 export type ReorderAdvice = "order_now" | "plan" | "ok" | "overstock";
 
+/** i18n keys — the calculation layer never holds display text. */
+export type StockEventKey =
+  | "road.evToday"
+  | "road.evZero"
+  | "road.evOrderLast"
+  | "road.evArrive";
+
 export interface CountryProfile {
   id: GulfCountry;
   nameAr: string;
@@ -43,6 +50,20 @@ export interface Fees {
   codPercent: number;
 }
 
+/** Inputs of the suggested selling price — were hardcoded inside cod.ts. */
+export interface PricingRules {
+  /** Shipping per delivered order at 100% delivery, before the rate penalty. */
+  shippingBaseUsd: number;
+  /** Call-center cost carried by each delivered order. */
+  callCenterUsd: number;
+  /** Ad spend per delivered order = CPL × this. */
+  adsPerDeliveredMultiple: number;
+  /** COD collection fee as a share of the selling price. */
+  codPercent: number;
+  /** Default target profit per delivered order. */
+  targetProfitUsd: number;
+}
+
 export interface Settings {
   usdToDzd: number;
   algeriaConfirm: number;
@@ -52,6 +73,7 @@ export interface Settings {
   algeriaCallCenterDzd: number;
   gulfFees: Fees;
   algeriaFeesUsd: Fees;
+  pricing: PricingRules;
 }
 
 export interface PlProduct {

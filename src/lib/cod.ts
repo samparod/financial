@@ -4,8 +4,11 @@ import type {
   Fees,
   Operations,
   PlProduct,
+  PricingRules,
   ReorderAdvice,
+  Settings,
   StabilityInput,
+  StockEventKey,
   StockItem,
 } from "./types";
 
@@ -292,14 +295,18 @@ export function stockPath(item: StockItem) {
   else if (daysLeft <= item.leadTimeDays + item.bufferDays) advice = "order_now";
   else if (daysLeft <= item.leadTimeDays + item.bufferDays + 7) advice = "plan";
   else if (daysLeft > 60 && item.qty > needFor30 * 1.8) advice = "overstock";
-  const days: { day: number; remaining: number; event?: string }[] = [];
-  for (let d = 1; d <= 32; d++) {
+  // The horizon stretches far enough to show every marked event, but stays
+  // within 32..90 days so the timeline keeps a readable density.
+  const lastEventDay = Math.max(stockZeroDay, arrivalIfOrderToday + 1, orderByDay);
+  const horizon = Math.min(90, Math.max(32, lastEventDay + 4));
+  const days: { day: number; remaining: number; event?: StockEventKey }[] = [];
+  for (let d = 1; d <= horizon; d++) {
     const remaining = Math.max(0, round2(item.qty - daily * d));
-    let event: string | undefined;
-    if (d === 1) event = "اليوم";
-    if (d === stockZeroDay) event = "المخزون صفر";
-    if (d === Math.max(1, orderByDay) && advice !== "ok") event = event || "آخر يوم للطلب";
-    if (d === arrivalIfOrderToday + 1) event = event || "وصول طلب اليوم";
+    let event: StockEventKey | undefined;
+    if (d === 1) event = "road.evToday";
+    if (d === stockZeroDay) event = "road.evZero";
+    if (d === Math.max(1, orderByDay) && advice !== "ok") event = event || "road.evOrderLast";
+    if (d === arrivalIfOrderToday + 1) event = event || "road.evArrive";
     days.push({ day: d, remaining, event });
   }
   return {
@@ -309,6 +316,7 @@ export function stockPath(item: StockItem) {
     cover30: round2(cover30),
     orderByDay,
     advice,
+    horizon,
     days,
   };
 }
@@ -337,12 +345,41 @@ export function addDays(iso: string, days: number) {
   return d.toISOString().slice(0, 10);
 }
 
-export function sellingPriceUsd(productCost: number, deliveredRate: number, cpl: number, profit = 20) {
-  const shipping = 11 * (1 / Math.max(deliveredRate, 0.2));
-  const adsPerDelivered = cpl * 3;
-  const callCenter = 3.5;
-  const sub = productCost + shipping + callCenter + adsPerDelivered + profit;
-  const price = sub / (1 - 0.05);
+export const DEFAULT_PRICING: PricingRules = {
+  shippingBaseUsd: 11,
+  callCenterUsd: 3.5,
+  adsPerDeliveredMultiple: 3,
+  codPercent: 0.05,
+  targetProfitUsd: 20,
+};
+
+/**
+ * Fills sub-objects that older saved states never had, without touching values
+ * the user already set. Persisted settings replace the defaults wholesale, so a
+ * missing key would otherwise read as undefined and break every price.
+ */
+export function migrateSettings(saved: Partial<Settings> | undefined, base: Settings): Settings {
+  return {
+    ...base,
+    ...saved,
+    gulfFees: { ...base.gulfFees, ...saved?.gulfFees },
+    algeriaFeesUsd: { ...base.algeriaFeesUsd, ...saved?.algeriaFeesUsd },
+    pricing: { ...DEFAULT_PRICING, ...saved?.pricing },
+  };
+}
+
+export function sellingPriceUsd(
+  productCost: number,
+  deliveredRate: number,
+  cpl: number,
+  profit?: number,
+  rules: PricingRules = DEFAULT_PRICING
+) {
+  const shipping = rules.shippingBaseUsd * (1 / Math.max(deliveredRate, 0.2));
+  const adsPerDelivered = cpl * rules.adsPerDeliveredMultiple;
+  const target = profit ?? rules.targetProfitUsd;
+  const sub = productCost + shipping + rules.callCenterUsd + adsPerDelivered + target;
+  const price = sub / (1 - rules.codPercent);
   return round2(price);
 }
 

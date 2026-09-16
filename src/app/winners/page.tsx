@@ -29,6 +29,9 @@ const CRITERIA: {
   { key: "scalability", help: "win.scale" },
 ];
 
+/** Rough sea-freight rate used only for the quick price hint on a candidate. */
+const SEA_RATE_PER_KG = 9;
+
 export default function WinnersPage() {
   const { t } = useT();
   const s = useCod();
@@ -69,8 +72,8 @@ export default function WinnersPage() {
         {list.map((w) => {
           const score =
             (w.wow + w.problem + w.availability + w.competition + w.perceivedValue + w.scalability) / 6;
-          const landed = w.chinaPrice + w.weightKg * 9;
-          const suggest = sellingPriceUsd(landed, 0.5, 4);
+          const landed = w.chinaPrice + w.weightKg * SEA_RATE_PER_KG;
+          const suggest = sellingPriceUsd(landed, 0.5, 4, undefined, s.settings.pricing);
           const st = STATUSES.find((x) => x.id === w.status)!;
           return (
             <div key={w.id} className="card p-5">

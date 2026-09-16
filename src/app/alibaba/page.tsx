@@ -24,6 +24,11 @@ export default function AlibabaPage() {
   const s = useCod();
   const [region, setRegion] = useState<Region | "all">("all");
   const list = s.shipments.filter((x) => region === "all" || x.region === region);
+  // Money already committed but not sellable yet: everything between the order
+  // and the moment it lands in stock.
+  const inTransit = list.filter((x) => x.status !== "draft" && x.status !== "in_stock");
+  const inTransitUsd = inTransit.reduce((sum, x) => sum + landedCost(x).total, 0);
+  const inTransitQty = inTransit.reduce((sum, x) => sum + x.qty, 0);
 
   return (
     <div className="lg:p-8">
@@ -41,6 +46,18 @@ export default function AlibabaPage() {
         }
       />
       <Explain id="ab.page" />
+
+      {inTransit.length > 0 && (
+        <div className="card p-5 mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] text-mute">{t("ab.inTransit")}</div>
+            <div className="text-2xl font-extrabold text-gold mt-1">{money(inTransitUsd)}</div>
+          </div>
+          <p className="text-xs text-mute">
+            {t("ab.inTransitNote", { n: inTransit.length, qty: inTransitQty })}
+          </p>
+        </div>
+      )}
 
       <div className="space-y-4">
         {list.map((ship) => {
@@ -66,7 +83,22 @@ export default function AlibabaPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
                 <TextField label={t("ab.product")} value={ship.productName} onChange={(v) => s.setShip(ship.id, { productName: v })} help="ab.product" />
                 <TextField label={t("ab.supplier")} value={ship.supplier} onChange={(v) => s.setShip(ship.id, { supplier: v })} help="ab.supplier" />
-                <TextField label={t("ab.url")} value={ship.alibabaUrl} onChange={(v) => s.setShip(ship.id, { alibabaUrl: v })} help="ab.url" />
+                <div className="flex items-end gap-1.5">
+                  <div className="flex-1 min-w-0">
+                    <TextField label={t("ab.url")} value={ship.alibabaUrl} onChange={(v) => s.setShip(ship.id, { alibabaUrl: v })} help="ab.url" />
+                  </div>
+                  {isOpenableUrl(ship.alibabaUrl) && (
+                    <a
+                      href={ship.alibabaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={t("ab.openUrl")}
+                      className="shrink-0 border border-gold/40 bg-gold/15 text-gold rounded-lg px-2.5 py-2 text-xs leading-none"
+                    >
+                      ↗
+                    </a>
+                  )}
+                </div>
                 <TextField label={t("ab.dest")} value={ship.destination} onChange={(v) => s.setShip(ship.id, { destination: v })} help="ab.dest" />
                 <LabelHelp id="ab.status">
                   <label className="block">
@@ -132,6 +164,10 @@ export default function AlibabaPage() {
       </div>
     </div>
   );
+}
+
+function isOpenableUrl(url: string) {
+  return /^https?:\/\/\S+$/i.test(url.trim());
 }
 
 function Mini({ k, v, help }: { k: string; v: string; help?: string }) {

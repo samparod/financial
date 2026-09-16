@@ -214,9 +214,9 @@ export const calcHelp: HelpBundle = {
       example: "80 دولار × 245 ≈ 19 600 دينار. تقدر تدورّ لرقم ساهل في السوق.",
     },
     "sim.margin": {
-      title: "هامش على الواصلة — شحال فوق ثمن العلبة",
+      title: "فرق السعر — شحال فوق ثمن العلبة",
       meaning:
-        "الفرق بين سعر البيع والتكلفة الواصلة، بالنسبة لسعر البيع. مو الربح الصافي. الربح الصافي ينقص الإعلان والكول سنتر وCOD.",
+        "الفرق بين سعر البيع والتكلفة الواصلة، بالنسبة لسعر البيع. هذا ماشي ربح — ما يطرحش الإعلان ولا الشحن ولا الكول سنتر ولا COD. الربح الصافي هو الرقم المستهدف اللي كتبتو فوق.",
       example: "بيع 80 دولار، واصلة 6.8. الهامش كبير على الورق. بعد الإعلان والشحن المحسوب، الربح هو الرقم المستهدف اللي كتبتي.",
     },
   },
@@ -433,9 +433,9 @@ export const calcHelp: HelpBundle = {
       example: "80 $ × 245 ≈ 19 600 DA. Vous pouvez arrondir à un chiffre simple du marché.",
     },
     "sim.margin": {
-      title: "Marge sur le coût arrivé — combien au-dessus de la boîte",
+      title: "Écart de prix — combien au-dessus de la boîte",
       meaning:
-        "L’écart entre le prix de vente et le coût arrivé, par rapport au prix de vente. Ce n’est pas le profit net. Le profit net enlève pubs, call center et COD.",
+        "L’écart entre le prix de vente et le coût arrivé, par rapport au prix de vente. Ce n’est pas un profit : ni pubs, ni transport, ni call center, ni COD ne sont déduits. Le profit net est le chiffre cible saisi plus haut.",
       example: "Vente 80 $, arrivé 6.8. La marge papier est grande. Après pubs et transport calculé, le profit est le chiffre cible que vous avez tapé.",
     },
   },
@@ -652,9 +652,9 @@ export const calcHelp: HelpBundle = {
       example: "$80 × 245 ≈ 19,600 DZD. You can round to a simple market number.",
     },
     "sim.margin": {
-      title: "Margin on landed — how much above box cost",
+      title: "Price gap — how much above box cost",
       meaning:
-        "The gap between selling price and landed cost, as a share of selling price. Not net profit. Net profit still subtracts ads, call center and COD.",
+        "The gap between selling price and landed cost, as a share of selling price. This is not profit: ads, shipping, call center and COD are all still unsubtracted. Net profit is the target figure you typed above.",
       example: "Sell $80, landed $6.8. Paper margin looks big. After ads and calculated shipping, profit is the target number you typed.",
     },
   },

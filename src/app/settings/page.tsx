@@ -12,6 +12,7 @@ export default function SettingsPage() {
   const s = useCod();
   const g = s.settings.gulfFees;
   const a = s.settings.algeriaFeesUsd;
+  const p = s.settings.pricing;
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState("");
   const [dataDir, setDataDir] = useState("");
@@ -98,6 +99,18 @@ export default function SettingsPage() {
             <Num label={t("set.perDelivered")} value={a.deliveredFee} onChange={(n) => s.patchSettings({ algeriaFeesUsd: { ...a, deliveredFee: n } })} step={0.01} help="set.deliveredFee" />
             <Num label="COD %" value={a.codPercent} onChange={(n) => s.patchSettings({ algeriaFeesUsd: { ...a, codPercent: n } })} step={0.01} help="set.codPercent" />
           </div>
+        </div>
+      </div>
+
+      <div className="card p-5 mt-4">
+        <h2 className="font-bold mb-2">{t("set.pricingTitle")}</h2>
+        <p className="text-sm text-mute mb-4">{t("set.pricingDesc")}</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <Num label={t("set.shippingBase")} value={p.shippingBaseUsd} onChange={(n) => s.patchSettings({ pricing: { ...p, shippingBaseUsd: n } })} step={0.5} />
+          <Num label={t("set.callCenterUsd")} value={p.callCenterUsd} onChange={(n) => s.patchSettings({ pricing: { ...p, callCenterUsd: n } })} step={0.1} />
+          <Num label={t("set.adsMultiple")} value={p.adsPerDeliveredMultiple} onChange={(n) => s.patchSettings({ pricing: { ...p, adsPerDeliveredMultiple: n } })} step={0.1} />
+          <Num label="COD %" value={p.codPercent} onChange={(n) => s.patchSettings({ pricing: { ...p, codPercent: n } })} step={0.01} />
+          <Num label={t("set.targetProfit")} value={p.targetProfitUsd} onChange={(n) => s.patchSettings({ pricing: { ...p, targetProfitUsd: n } })} />
         </div>
       </div>
     </div>

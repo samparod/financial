@@ -104,7 +104,7 @@ export function useServerSync() {
   useEffect(() => {
     const id = window.setTimeout(() => {
       if (!useCod.getState().hydrated) useCod.setState({ hydrated: true });
-    }, 5000);
+    }, 3000);
     return () => window.clearTimeout(id);
   }, []);
 
