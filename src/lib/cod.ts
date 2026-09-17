@@ -250,6 +250,28 @@ export function costOfService(
   };
 }
 
+/** Backfill unit price from legacy rows; keep totals in sync when price mode is on. */
+export function migratePlProduct(p: PlProduct): PlProduct {
+  const unitSellPrice =
+    p.unitSellPrice > 0
+      ? p.unitSellPrice
+      : p.delivered > 0 && p.totalSales > 0
+        ? round2(p.totalSales / p.delivered)
+        : 0;
+  const totalSales =
+    unitSellPrice > 0 && p.delivered > 0
+      ? round2(unitSellPrice * p.delivered)
+      : p.totalSales;
+  return { ...p, unitSellPrice, totalSales };
+}
+
+export function syncPlSales(patch: PlProduct): PlProduct {
+  if (patch.unitSellPrice > 0) {
+    return { ...patch, totalSales: round2(patch.unitSellPrice * patch.delivered) };
+  }
+  return patch;
+}
+
 export function calcPl(p: PlProduct, fees: Fees) {
   const product = p.productCost * p.delivered;
   const cos = costOfService(p.leads, p.orders, p.delivered, p.totalSales, fees);

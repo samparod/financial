@@ -8,6 +8,7 @@ import {
   stockPath,
   sellingPriceUsd,
   migrateSettings,
+  syncPlSales,
   DEFAULT_PRICING,
   DEFAULT_GULF_FEES,
 } from "../src/lib/cod.ts";
@@ -74,6 +75,27 @@ test("custom pricing rules change the price", () => {
     callCenterUsd: 1,
   });
   assert.ok(cheap < 71.05, `expected a lower price, got ${cheap}`);
+});
+
+test("syncPlSales multiplies unit price by delivered", () => {
+  const row = {
+    id: "x",
+    region: "algeria",
+    name: "A",
+    productCost: 4,
+    leads: 100,
+    orders: 80,
+    delivered: 70,
+    unitSellPrice: 10,
+    totalSales: 0,
+    adsSpend: 0,
+    testSpend: 0,
+    adAccount: 0,
+    bonus: 0,
+    currency: "USD",
+  };
+  const out = syncPlSales(row);
+  assert.equal(out.totalSales, 700);
 });
 
 test("delivered rate below 20% does not explode the shipping term", () => {

@@ -244,6 +244,7 @@ export async function handleTelegramUpdate(update: {
       leads: 0,
       orders: 0,
       delivered: 0,
+      unitSellPrice: 0,
       totalSales: 0,
       adsSpend: 0,
       testSpend: 0,

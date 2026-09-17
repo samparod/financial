@@ -84,6 +84,8 @@ export interface PlProduct {
   leads: number;
   orders: number;
   delivered: number;
+  /** Selling price per delivered unit (USD). Total sales = unitSellPrice × delivered when set. */
+  unitSellPrice: number;
   totalSales: number;
   adsSpend: number;
   testSpend: number;

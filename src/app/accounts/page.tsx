@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { useCod } from "@/lib/store";
-import { calcPl, opsTotal } from "@/lib/cod";
+import { calcPl, opsTotal, round2 } from "@/lib/cod";
 import { money } from "@/lib/format";
 import { Btn, Num, PageHead } from "@/components/ui";
 import { Explain, LabelHelp } from "@/components/Explain";
@@ -16,7 +16,10 @@ function sheetMoney(region: Region, usdToDzd: number) {
   const fx = Math.max(usdToDzd, 1);
   const cur: Currency = isDz ? "DZD" : "USD";
   const digits = isDz ? 0 : 2;
-  const toDisplay = (usd: number) => (isDz ? usd * fx : usd);
+  const toDisplay = (usd: number) => {
+    const raw = isDz ? usd * fx : usd;
+    return isDz ? Math.round(raw) : round2(raw);
+  };
   const toUsd = (display: number) => (isDz ? display / fx : display);
   const formatUsd = (usd: number) => money(toDisplay(usd), cur, digits);
   return { isDz, cur, digits, fx, toDisplay, toUsd, formatUsd, prefix: isDz ? "د.ج" : "$" };
@@ -132,7 +135,7 @@ export default function AccountsPage() {
     { key: "leads" as const, help: "sheet.lead", money: false },
     { key: "orders" as const, help: "sheet.order", money: false },
     { key: "delivered" as const, help: "sheet.delivered", money: false },
-    { key: "totalSales" as const, help: "sheet.sales", step: 0.01, money: true },
+    { key: "unitSellPrice" as const, help: "sheet.unitPrice", step: 0.01, money: true },
   ];
 
   const spendRows = [
@@ -234,7 +237,12 @@ export default function AccountsPage() {
               </td>
             </tr>
             <Calc
-              label={<LabelHelp id="sheet.codCollected">{t("sheet.codCollected")}</LabelHelp>}
+              label={
+                <div>
+                  <LabelHelp id="sheet.codCollected">{t("sheet.codCollected")}</LabelHelp>
+                  <div className="text-[10px] text-mute font-normal mt-0.5">{t("sheet.salesFormula")}</div>
+                </div>
+              }
               values={rows.map((p) => p.totalSales)}
               formatUsd={sm.formatUsd}
             />
