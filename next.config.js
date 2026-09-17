@@ -6,7 +6,9 @@ const nextConfig = {
   output: isElectron ? "export" : "standalone",
   trailingSlash: isElectron,
   images: { unoptimized: true },
-  serverExternalPackages: isElectron ? undefined : ["pg"],
+  experimental: {
+    serverComponentsExternalPackages: isElectron ? undefined : ["pg", "@netlify/database"],
+  },
 };
 
 module.exports = nextConfig;

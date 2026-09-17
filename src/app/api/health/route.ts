@@ -1,25 +1,28 @@
 import { NextResponse } from "next/server";
-import { loadState } from "@/lib/persist";
+import { probeStore } from "@/lib/persist";
 import { setTelegramWebhook } from "@/lib/telegram";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  let db = "file";
-  try {
-    await loadState();
-    db = process.env.DATABASE_URL ? "postgres" : "file";
-  } catch (e) {
+  const probe = await probeStore();
+  if (!probe.durable) {
     return NextResponse.json(
-      { ok: false, db: "error", error: e instanceof Error ? e.message : "db" },
-      { status: 500 }
+      {
+        ok: false,
+        db: probe.backend,
+        empty: probe.empty,
+        error: probe.error || "database unavailable",
+      },
+      { status: 503 }
     );
   }
   await setTelegramWebhook();
   return NextResponse.json({
     ok: true,
-    db,
+    db: probe.backend,
+    empty: probe.empty,
     host: process.env.WEBAPP_URL || null,
   });
 }
