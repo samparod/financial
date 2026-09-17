@@ -266,6 +266,20 @@ export function stockValueAtCost(item: StockItem) {
   return round2(Math.max(0, item.qty) * Math.max(0, item.unitCostUsd));
 }
 
+/** P&L linked stock: same unit cost as the sheet row (DZD on Algeria tab), not inventory page USD. */
+export function plLinkedStockValueUsd(
+  p: PlProduct,
+  item: StockItem | undefined,
+  fxToDzd: number,
+  sheetInDzd: boolean
+) {
+  if (!item) return 0;
+  const qty = Math.max(0, item.qty);
+  const unit = Math.max(0, p.productCost);
+  if (sheetInDzd && fxToDzd > 0) return round2((qty * unit) / fxToDzd);
+  return round2(qty * unit);
+}
+
 function plMoneyToUsd(n: number, fxToDzd: number, sheetInDzd: boolean) {
   return sheetInDzd && fxToDzd > 0 ? n / fxToDzd : n;
 }

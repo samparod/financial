@@ -9,6 +9,7 @@ import {
   sellingPriceUsd,
   migrateSettings,
   plCollectedSales,
+  plLinkedStockValueUsd,
   calcPl,
   DEFAULT_PRICING,
   DEFAULT_GULF_FEES,
@@ -103,6 +104,27 @@ test("plCollectedSales uses unit price × delivered when set", () => {
   const c = calcPl(p, DEFAULT_GULF_FEES, 245, true);
   assert.ok(Math.abs(c.product * 245 - 70000) < 2, "product line ≈ 70 × 1000 DZD");
   assert.ok(c.profit < 161000 / 245, "profit should be below revenue in USD");
+});
+
+test("linked stock value uses sheet product cost on Algeria tab", () => {
+  const p = {
+    id: "x",
+    region: "algeria",
+    name: "kora",
+    productCost: 1000,
+    leads: 0,
+    orders: 0,
+    delivered: 0,
+    totalSales: 0,
+    adsSpend: 0,
+    testSpend: 0,
+    adAccount: 0,
+    bonus: 0,
+    currency: "DZD",
+  };
+  const item = { id: "st", region: "algeria", qty: 100, unitCostUsd: 4.9, name: "kora" };
+  const usd = plLinkedStockValueUsd(p, item, 245, true);
+  assert.ok(Math.abs(usd * 245 - 100000) < 1, "100 × 1000 DZD, not unitCostUsd from inventory");
 });
 
 test("Algeria sheet: ads spend stays USD (not ÷ FX)", () => {

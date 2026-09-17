@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { useCod } from "@/lib/store";
-import { calcPl, opsTotal, plCollectedSales, plSalesUsd, stockValueAtCost } from "@/lib/cod";
+import { calcPl, opsTotal, plCollectedSales, plLinkedStockValueUsd, plSalesUsd } from "@/lib/cod";
 import { money } from "@/lib/format";
 import { Btn, Num, PageHead } from "@/components/ui";
 import { Explain, LabelHelp } from "@/components/Explain";
@@ -114,8 +114,7 @@ export default function AccountsPage() {
     p.stockItemId ? regionStock.find((x) => x.id === p.stockItemId) : undefined;
 
   const inventoryUsd = rows.reduce((sum, p) => {
-    const item = stockFor(p);
-    return sum + (item ? stockValueAtCost(item) : 0);
+    return sum + plLinkedStockValueUsd(p, stockFor(p), fx, useDzd);
   }, 0);
   const realNet = net + inventoryUsd;
 
@@ -387,10 +386,7 @@ export default function AccountsPage() {
 
             <Calc
               label={<LabelHelp id="sheet.stockValue">{t("sheet.stockValue")}</LabelHelp>}
-              values={rows.map((p) => {
-                const item = stockFor(p);
-                return item ? stockValueAtCost(item) : 0;
-              })}
+              values={rows.map((p) => plLinkedStockValueUsd(p, stockFor(p), fx, useDzd))}
               formatUsd={showMoney}
             />
 
@@ -548,11 +544,12 @@ export default function AccountsPage() {
               {showMoney(realNet, 0)}
             </div>
             <p className="text-xs text-mute mt-2">{t("sheet.realNetHint")}</p>
-            {inventoryUsd > 0 && (
-              <p className="text-xs text-mute mt-1">
-                {t("sheet.stockValue")}: {showMoney(inventoryUsd, 0)}
-              </p>
-            )}
+            <p className="text-xs text-mute mt-1 tabular-nums" dir="ltr">
+              {t("sheet.realNetBreakdown", {
+                net: showMoney(net, 0),
+                stock: showMoney(inventoryUsd, 0),
+              })}
+            </p>
           </div>
         </div>
       </div>
