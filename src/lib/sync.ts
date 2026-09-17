@@ -5,6 +5,15 @@ import { useCod } from "@/lib/store";
 import { parseBackup } from "@/lib/backup";
 import { migrateSettings } from "@/lib/cod";
 import { SEED } from "@/lib/seed";
+import {
+  cloudMigrated,
+  getWorkspaceId,
+  looksLikeSeed,
+  markCloudMigrated,
+  pickState,
+  readLocalPersisted,
+  unwrapStatePayload,
+} from "@/lib/state-io";
 import type { AppState } from "@/lib/types";
 
 function sliceState(s: {
@@ -17,16 +26,7 @@ function sliceState(s: {
   shipments: AppState["shipments"];
   winners: AppState["winners"];
 }): AppState {
-  return {
-    settings: s.settings,
-    plProducts: s.plProducts,
-    operations: s.operations,
-    stability: s.stability,
-    stock: s.stock,
-    cash: s.cash,
-    shipments: s.shipments,
-    winners: s.winners,
-  };
+  return pickState(s as AppState);
 }
 
 function applyServer(data: AppState) {
@@ -40,18 +40,32 @@ function applyServer(data: AppState) {
   });
 }
 
-async function fetchState(timeoutMs = 8000): Promise<AppState | null> {
+function stateUrl() {
+  const ws = getWorkspaceId();
+  return `/api/state?workspace=${encodeURIComponent(ws)}`;
+}
+
+async function fetchState(timeoutMs = 8000) {
   const ctrl = new AbortController();
   const timer = window.setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const r = await fetch("/api/state", { cache: "no-store", signal: ctrl.signal });
+    const r = await fetch(stateUrl(), { cache: "no-store", signal: ctrl.signal });
     if (!r.ok) return null;
-    return (await r.json()) as AppState;
+    return unwrapStatePayload(await r.json());
   } catch {
     return null;
   } finally {
     window.clearTimeout(timer);
   }
+}
+
+async function putState(state: AppState) {
+  const r = await fetch(stateUrl(), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(sliceState(state)),
+  });
+  if (!r.ok) throw new Error("api");
 }
 
 export function useServerSync() {
@@ -89,10 +103,25 @@ export function useServerSync() {
         setMode("local");
         return;
       }
-      const data = await fetchState();
+      const payload = await fetchState();
       if (stop) return;
-      if (data) {
-        applyServer(data);
+      if (payload?.state) {
+        const ws = getWorkspaceId();
+        const local = readLocalPersisted();
+        const localCustom = Boolean(local && !looksLikeSeed(local));
+        const serverEmptyOrSeed = payload.empty || looksLikeSeed(payload.state);
+        if (localCustom && local && serverEmptyOrSeed && !cloudMigrated(ws)) {
+          try {
+            await putState(local);
+            markCloudMigrated(ws);
+            applyServer(local);
+          } catch {
+            applyServer(payload.state);
+          }
+        } else {
+          if (!payload.empty) markCloudMigrated(ws);
+          applyServer(payload.state);
+        }
         setMode(memoryServer ? "memory" : "server");
         window.setTimeout(() => {
           skip.current = false;
@@ -106,7 +135,7 @@ export function useServerSync() {
     return () => {
       stop = true;
     };
-  }, []);
+  }, [memoryServer]);
 
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -135,11 +164,7 @@ export function useServerSync() {
       lastLocal.current = Date.now();
       if (timer.current) window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => {
-        fetch("/api/state", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sliceState(s)),
-        }).catch(() => setMode("offline"));
+        putState(sliceState(s)).catch(() => setMode("offline"));
       }, 700);
     });
     return () => {
@@ -155,10 +180,9 @@ export function useServerSync() {
       if (Date.now() - lastLocal.current < 2500) return;
       try {
         skip.current = true;
-        const r = await fetch("/api/state", { cache: "no-store" });
-        if (!r.ok) throw new Error("api");
-        const data = (await r.json()) as AppState;
-        applyServer(data);
+        const payload = await fetchState();
+        if (!payload?.state) throw new Error("api");
+        applyServer(payload.state);
         window.setTimeout(() => {
           skip.current = false;
         }, 300);

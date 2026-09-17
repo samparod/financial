@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SEED } from "./seed";
 import { landedCost, migrateSettings } from "./cod";
+import { LOCAL_STATE_KEY } from "./state-io";
 import type {
   AlibabaShipment,
   AppState,
@@ -255,7 +256,7 @@ export const useCod = create<Store>()(
         })),
     }),
     {
-      name: "lmofid-cod-v1",
+      name: LOCAL_STATE_KEY,
       partialize: (s) => ({
         settings: s.settings,
         plProducts: s.plProducts,

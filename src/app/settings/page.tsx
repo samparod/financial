@@ -6,6 +6,7 @@ import { Num, PageHead, Btn } from "@/components/ui";
 import { Explain } from "@/components/Explain";
 import { useT } from "@/lib/lang";
 import { downloadBackup, parseBackup } from "@/lib/backup";
+import { DEFAULT_WORKSPACE, getWorkspaceId, parseWorkspaceId, setWorkspaceId } from "@/lib/state-io";
 
 export default function SettingsPage() {
   const { t } = useT();
@@ -16,9 +17,15 @@ export default function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState("");
   const [dataDir, setDataDir] = useState("");
+  const [workspace, setWorkspace] = useState(DEFAULT_WORKSPACE);
+  const [copied, setCopied] = useState(false);
+  const [showCloud, setShowCloud] = useState(false);
+  const [cloudMsg, setCloudMsg] = useState("");
 
   useEffect(() => {
     window.istiqrar?.dataDir().then(setDataDir).catch(() => undefined);
+    setWorkspace(getWorkspaceId());
+    setShowCloud(!window.istiqrar);
   }, []);
 
   const onFile = async (f: File | undefined) => {
@@ -45,6 +52,56 @@ export default function SettingsPage() {
         extra={<Btn tone="danger" onClick={() => s.reset()}>{t("set.reset")}</Btn>}
       />
       <Explain id="set.page" />
+
+      {showCloud && (
+        <div className="card p-5 mb-4">
+          <h2 className="font-bold mb-2">{t("set.cloudTitle")}</h2>
+          <p className="text-sm text-mute mb-4">{t("set.cloudDesc")}</p>
+          <label className="block text-sm mb-1">{t("set.workspace")}</label>
+          <input
+            dir="ltr"
+            className="sheet-input font-mono w-full mb-2"
+            value={workspace}
+            onChange={(e) => setWorkspace(e.target.value)}
+            maxLength={64}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <p className="text-xs text-mute mb-3">{t("set.workspaceHint")}</p>
+          <div className="flex flex-wrap gap-2">
+            <Btn
+              tone="gold"
+              onClick={() => {
+                const id = parseWorkspaceId(workspace);
+                if (!id) {
+                  setCloudMsg(t("set.workspaceInvalid"));
+                  return;
+                }
+                setWorkspaceId(id);
+                window.location.reload();
+              }}
+            >
+              {t("set.workspaceApply")}
+            </Btn>
+            <Btn
+              onClick={async () => {
+                const id = parseWorkspaceId(workspace) ?? getWorkspaceId();
+                try {
+                  await navigator.clipboard.writeText(id);
+                  setCopied(true);
+                  window.setTimeout(() => setCopied(false), 2000);
+                } catch {
+                  /* ignore */
+                }
+              }}
+            >
+              {t("set.workspaceCopy")}
+            </Btn>
+          </div>
+          {copied && <p className="text-sm text-gold mt-3">{t("set.workspaceCopied")}</p>}
+          {cloudMsg && <p className="text-sm text-danger mt-3">{cloudMsg}</p>}
+        </div>
+      )}
 
       <div className="card p-5 mb-4">
         <h2 className="font-bold mb-2">{t("set.backup")}</h2>

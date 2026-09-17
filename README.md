@@ -33,6 +33,25 @@ After deploy, open once:
 
 That creates the table and registers the Telegram webhook.
 
+## Netlify · vermillion-pony-71141f
+
+Production site: https://vermillion-pony-71141f.netlify.app
+
+The app uses **Netlify Database** (Postgres) via `@netlify/database`. Netlify injects `NETLIFY_DB_URL` — do not commit connection strings.
+
+Schema: one `workspaces` row per workspace key (`id` text, `data` jsonb). The default key is `default`, so two browsers opening the same site share the same numbers. Change the key under Settings only if you want a separate copy.
+
+After a production deploy:
+
+1. Open https://vermillion-pony-71141f.netlify.app/api/health — `ok` should be true and `db` should be `netlify-db` (or `postgres`).
+2. In one browser, change a figure (for example a product cost on the accounts sheet) and wait about a second. The sidebar should say the data is saved in the cloud.
+3. In another browser or device (or a private window), open the same URL. The figure from step 2 should be there.
+4. Optional: Settings → workspace key. Leave `default` for this personal tool. If you set a custom key, paste the same key on the other device.
+
+If `/api/health` reports `database unavailable`, confirm Netlify Database is Ready for this site (Data & Storage → Database). No paid plan is required.
+
+Existing numbers stored only in the browser (`localStorage` key `lmofid-cod-v1`) are uploaded once when the cloud record is still empty (or still the sample seed).
+
 ## Local
 
 ```
