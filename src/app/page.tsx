@@ -16,7 +16,7 @@ export default function HomePage() {
   const gulfPl = s.plProducts.filter((p) => p.region === "gulf");
   const dzPl = s.plProducts.filter((p) => p.region === "algeria");
   const gulfProfit = gulfPl.reduce((a, p) => a + calcPl(p, gulfFees).profit, 0);
-  const dzProfitUsd = dzPl.reduce((a, p) => a + calcPl(p, dzFees).profit, 0);
+  const dzProfitUsd = dzPl.reduce((a, p) => a + calcPl(p, dzFees, s.settings.usdToDzd).profit, 0);
   const gulfOps = s.operations.find((o) => o.region === "gulf")!;
   const dzOps = s.operations.find((o) => o.region === "algeria")!;
   const gulfNet = gulfProfit - opsTotal(gulfOps);

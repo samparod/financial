@@ -50,7 +50,10 @@ async function summary(state: AppState) {
   const gulf = state.plProducts.filter((p) => p.region === "gulf");
   const dz = state.plProducts.filter((p) => p.region === "algeria");
   const gp = gulf.reduce((a, p) => a + calcPl(p, state.settings.gulfFees).profit, 0);
-  const dp = dz.reduce((a, p) => a + calcPl(p, state.settings.algeriaFeesUsd).profit, 0);
+  const dp = dz.reduce(
+    (a, p) => a + calcPl(p, state.settings.algeriaFeesUsd, state.settings.usdToDzd).profit,
+    0
+  );
   const go = state.operations.find((o) => o.region === "gulf");
   const dzo = state.operations.find((o) => o.region === "algeria");
   const alerts = state.stock.filter((s) => {
@@ -132,7 +135,8 @@ export async function handleTelegramUpdate(update: {
   if (data === "pl" || text === "/pl") {
     const lines = state.plProducts.map((p) => {
       const fees = p.region === "gulf" ? state.settings.gulfFees : state.settings.algeriaFeesUsd;
-      const c = calcPl(p, fees);
+      const fx = p.region === "algeria" ? state.settings.usdToDzd : 0;
+      const c = calcPl(p, fees, fx);
       return `<b>${p.name}</b> [${p.region}]\nLead ${p.leads} · Order ${p.orders} · Del ${p.delivered}\nService ${money(c.service)} · Profit ${money(c.profit)} · EPD ${money(c.epd)}`;
     });
     await send(chatId, lines.join("\n\n") || "لا منتجات.", { reply_markup: menu().keyboard });
@@ -244,7 +248,6 @@ export async function handleTelegramUpdate(update: {
       leads: 0,
       orders: 0,
       delivered: 0,
-      unitSellPrice: 0,
       totalSales: 0,
       adsSpend: 0,
       testSpend: 0,
@@ -295,7 +298,8 @@ export async function handleTelegramUpdate(update: {
     if (field === "cost") p.productCost = n;
     await saveState(state);
     const fees = p.region === "gulf" ? state.settings.gulfFees : state.settings.algeriaFeesUsd;
-    const c = calcPl(p, fees);
+    const fx = p.region === "algeria" ? state.settings.usdToDzd : 0;
+    const c = calcPl(p, fees, fx);
     await send(chatId, `تم تحديث ${p.name}.\nService Cost ${money(c.service)}\nProfit ${money(c.profit)}\nEPD ${money(c.epd)}`, {
       reply_markup: menu().keyboard,
     });

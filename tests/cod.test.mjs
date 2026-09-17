@@ -8,7 +8,8 @@ import {
   stockPath,
   sellingPriceUsd,
   migrateSettings,
-  syncPlSales,
+  plCollectedSales,
+  calcPl,
   DEFAULT_PRICING,
   DEFAULT_GULF_FEES,
 } from "../src/lib/cod.ts";
@@ -77,29 +78,30 @@ test("custom pricing rules change the price", () => {
   assert.ok(cheap < 71.05, `expected a lower price, got ${cheap}`);
 });
 
-test("syncPlSales multiplies unit price by delivered", () => {
-  const row = {
+test("delivered rate below 20% does not explode the shipping term", () => {
+  assert.equal(sellingPriceUsd(10, 0.01, 4, 20), sellingPriceUsd(10, 0.2, 4, 20));
+});
+
+test("plCollectedSales uses unit price × delivered when set", () => {
+  const p = {
     id: "x",
     region: "algeria",
-    name: "A",
-    productCost: 4,
-    leads: 100,
-    orders: 80,
+    name: "kora",
+    productCost: 1000,
+    leads: 117,
+    orders: 90,
     delivered: 70,
-    unitSellPrice: 10,
     totalSales: 0,
+    sellPricePerDelivered: 2300,
     adsSpend: 0,
     testSpend: 0,
     adAccount: 0,
     bonus: 0,
-    currency: "USD",
+    currency: "DZD",
   };
-  const out = syncPlSales(row);
-  assert.equal(out.totalSales, 700);
-});
-
-test("delivered rate below 20% does not explode the shipping term", () => {
-  assert.equal(sellingPriceUsd(10, 0.01, 4, 20), sellingPriceUsd(10, 0.2, 4, 20));
+  assert.equal(plCollectedSales(p), 161000);
+  const c = calcPl(p, DEFAULT_GULF_FEES, 245);
+  assert.ok(c.profit < 161000 / 245, "profit should be below revenue in USD");
 });
 
 const baseSettings = {

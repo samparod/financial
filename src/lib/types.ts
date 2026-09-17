@@ -84,9 +84,12 @@ export interface PlProduct {
   leads: number;
   orders: number;
   delivered: number;
-  /** Selling price per delivered unit (USD). Total sales = unitSellPrice × delivered when set. */
-  unitSellPrice: number;
+  /** COD collected — auto from sellPricePerDelivered × delivered when that price is set */
   totalSales: number;
+  /** Selling price per delivered unit (same unit as productCost on the sheet) */
+  sellPricePerDelivered?: number;
+  /** Optional link to /inventory row for remaining stock value */
+  stockItemId?: string;
   adsSpend: number;
   testSpend: number;
   adAccount: number;

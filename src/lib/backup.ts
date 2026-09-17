@@ -1,6 +1,6 @@
-import { migratePlProduct, migrateSettings } from "./cod";
+import { migrateSettings } from "./cod";
 import { SEED } from "./seed";
-import type { AppState, PlProduct } from "./types";
+import type { AppState } from "./types";
 
 export function sliceBusiness(s: AppState): AppState {
   return {
@@ -22,9 +22,7 @@ export function parseBackup(raw: unknown): AppState | null {
   if (!inner.settings || !Array.isArray(inner.plProducts)) return null;
   return {
     settings: migrateSettings(inner.settings as AppState["settings"], SEED.settings),
-    plProducts: inner.plProducts.map((p) =>
-      migratePlProduct({ ...p, unitSellPrice: (p as PlProduct).unitSellPrice ?? 0 })
-    ),
+    plProducts: inner.plProducts,
     operations: inner.operations ?? [],
     stability: inner.stability as AppState["stability"],
     stock: inner.stock ?? [],

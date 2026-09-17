@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SEED } from "./seed";
-import { landedCost, migratePlProduct, migrateSettings, syncPlSales } from "./cod";
+import { landedCost, migrateSettings } from "./cod";
 import type {
   AlibabaShipment,
   AppState,
@@ -66,9 +66,7 @@ export const useCod = create<Store>()(
         })),
       setPl: (id, p) =>
         set((s) => ({
-          plProducts: s.plProducts.map((x) =>
-            x.id === id ? syncPlSales(migratePlProduct({ ...x, ...p })) : x
-          ),
+          plProducts: s.plProducts.map((x) => (x.id === id ? { ...x, ...p } : x)),
         })),
       addPl: (region) =>
         set((s) => {
@@ -85,13 +83,13 @@ export const useCod = create<Store>()(
                 leads: 0,
                 orders: 0,
                 delivered: 0,
-                unitSellPrice: 0,
                 totalSales: 0,
                 adsSpend: 0,
                 testSpend: 0,
                 adAccount: 0,
                 bonus: 0,
-                currency: "USD",
+                sellPricePerDelivered: 0,
+                currency: region === "algeria" ? "DZD" : "USD",
               },
             ],
           };
@@ -247,9 +245,7 @@ export const useCod = create<Store>()(
       importState: (data) =>
         set((s) => ({
           settings: migrateSettings(data.settings, s.settings),
-          plProducts: data.plProducts.map((p) =>
-            migratePlProduct({ ...p, unitSellPrice: p.unitSellPrice ?? 0 })
-          ),
+          plProducts: data.plProducts,
           operations: data.operations,
           stability: data.stability,
           stock: data.stock,
@@ -274,14 +270,10 @@ export const useCod = create<Store>()(
       // defaults wholesale, so fill any gap instead of losing what the user saved.
       merge: (persisted, current) => {
         const saved = (persisted ?? {}) as Partial<AppState>;
-        const plProducts = (saved.plProducts ?? current.plProducts).map((row) =>
-          migratePlProduct({ ...row, unitSellPrice: row.unitSellPrice ?? 0 })
-        );
         return {
           ...current,
           ...saved,
           settings: migrateSettings(saved.settings, current.settings),
-          plProducts,
         };
       },
       // Runs synchronously inside create(), so the `useCod` binding does not

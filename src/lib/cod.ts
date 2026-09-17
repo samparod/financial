@@ -250,34 +250,39 @@ export function costOfService(
   };
 }
 
-/** Backfill unit price from legacy rows; keep totals in sync when price mode is on. */
-export function migratePlProduct(p: PlProduct): PlProduct {
-  const unitSellPrice =
-    p.unitSellPrice > 0
-      ? p.unitSellPrice
-      : p.delivered > 0 && p.totalSales > 0
-        ? round2(p.totalSales / p.delivered)
-        : 0;
-  const totalSales =
-    unitSellPrice > 0 && p.delivered > 0
-      ? round2(unitSellPrice * p.delivered)
-      : p.totalSales;
-  return { ...p, unitSellPrice, totalSales };
+/** COD collected for the P&L row (manual totalSales or unit price × delivered). */
+export function plCollectedSales(p: PlProduct) {
+  const unit = p.sellPricePerDelivered ?? 0;
+  if (unit > 0 && p.delivered > 0) return round2(unit * p.delivered);
+  return p.totalSales;
 }
 
-export function syncPlSales(patch: PlProduct): PlProduct {
-  if (patch.unitSellPrice > 0) {
-    return { ...patch, totalSales: round2(patch.unitSellPrice * patch.delivered) };
-  }
-  return patch;
+export function plSalesUsd(p: PlProduct, fxToDzd: number) {
+  return round2(plMoneyToUsd(plCollectedSales(p), p, fxToDzd));
 }
 
-export function calcPl(p: PlProduct, fees: Fees) {
-  const product = p.productCost * p.delivered;
-  const cos = costOfService(p.leads, p.orders, p.delivered, p.totalSales, fees);
+export function stockValueAtCost(item: StockItem) {
+  return round2(Math.max(0, item.qty) * Math.max(0, item.unitCostUsd));
+}
+
+function plMoneyToUsd(n: number, p: PlProduct, fxToDzd: number) {
+  return p.currency === "DZD" && fxToDzd > 0 ? n / fxToDzd : n;
+}
+
+export function calcPl(p: PlProduct, fees: Fees, fxToDzd = 0) {
+  const salesLocal = plCollectedSales(p);
+  const sales = plMoneyToUsd(salesLocal, p, fxToDzd);
+  const product = plMoneyToUsd(p.productCost, p, fxToDzd) * p.delivered;
+  const cos = costOfService(p.leads, p.orders, p.delivered, sales, fees);
   const service = cos.total;
-  const totalCost = p.adsSpend + p.testSpend + p.adAccount + product + service + p.bonus;
-  const profit = p.totalSales - totalCost;
+  const totalCost =
+    plMoneyToUsd(p.adsSpend, p, fxToDzd) +
+    plMoneyToUsd(p.testSpend, p, fxToDzd) +
+    plMoneyToUsd(p.adAccount, p, fxToDzd) +
+    product +
+    service +
+    plMoneyToUsd(p.bonus, p, fxToDzd);
+  const profit = sales - totalCost;
   const epo = p.orders > 0 ? profit / p.orders : 0;
   const epd = p.delivered > 0 ? profit / p.delivered : 0;
   const confirmRate = p.leads > 0 ? p.orders / p.leads : 0;
