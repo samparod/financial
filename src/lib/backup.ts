@@ -1,3 +1,5 @@
+import { migrateSettings } from "./cod";
+import { SEED } from "./seed";
 import type { AppState } from "./types";
 
 export function sliceBusiness(s: AppState): AppState {
@@ -19,7 +21,7 @@ export function parseBackup(raw: unknown): AppState | null {
   const inner = (o.state && typeof o.state === "object" ? o.state : o) as Partial<AppState>;
   if (!inner.settings || !Array.isArray(inner.plProducts)) return null;
   return {
-    settings: inner.settings,
+    settings: migrateSettings(inner.settings as AppState["settings"], SEED.settings),
     plProducts: inner.plProducts,
     operations: inner.operations ?? [],
     stability: inner.stability as AppState["stability"],

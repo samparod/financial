@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useCod } from "@/lib/store";
 import { parseBackup } from "@/lib/backup";
+import { migrateSettings } from "@/lib/cod";
+import { SEED } from "@/lib/seed";
 import type { AppState } from "@/lib/types";
 
 function sliceState(s: {
@@ -28,8 +30,12 @@ function sliceState(s: {
 }
 
 function applyServer(data: AppState) {
+  const base = useCod.getState().settings ?? SEED.settings;
   useCod.setState({
-    ...sliceState(data),
+    ...sliceState({
+      ...data,
+      settings: migrateSettings(data.settings, base),
+    }),
     hydrated: true,
   });
 }

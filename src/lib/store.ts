@@ -242,8 +242,8 @@ export const useCod = create<Store>()(
       removeWinner: (id) => set((s) => ({ winners: s.winners.filter((x) => x.id !== id) })),
       reset: () => set({ ...SEED }),
       importState: (data) =>
-        set({
-          settings: data.settings,
+        set((s) => ({
+          settings: migrateSettings(data.settings, s.settings),
           plProducts: data.plProducts,
           operations: data.operations,
           stability: data.stability,
@@ -251,7 +251,7 @@ export const useCod = create<Store>()(
           cash: data.cash,
           shipments: data.shipments,
           winners: data.winners,
-        }),
+        })),
     }),
     {
       name: "lmofid-cod-v1",

@@ -12,7 +12,8 @@ import type { GulfCountry } from "@/lib/types";
 export default function GulfPage() {
   const { t } = useT();
   const fees = useCod((s) => s.settings.gulfFees);
-  const gulfPl = useCod((s) => s.plProducts.filter((p) => p.region === "gulf"));
+  const plProducts = useCod((s) => s.plProducts);
+  const gulfPl = useMemo(() => plProducts.filter((p) => p.region === "gulf"), [plProducts]);
   const [country, setCountry] = useState<GulfCountry>("KSA");
   const profile = GULF_COUNTRIES.find((c) => c.id === country)!;
   const [leads, setLeads] = useState(1000);
