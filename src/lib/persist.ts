@@ -1,11 +1,48 @@
 import fs from "fs";
 import path from "path";
 import { Pool } from "pg";
-import { loadMemoryState, memoryModeEnabled, saveMemoryState } from "./memory-state";
 import { SEED } from "./seed";
 import type { AppState } from "./types";
 
 const FILE = path.join(process.cwd(), "data", "state.json");
+const MEMORY_SNAPSHOT = path.join(process.cwd(), "data", "memory-snapshot.json");
+
+let memoryState: AppState | null = null;
+
+export function memoryModeEnabled() {
+  return process.env.STATE_MEMORY === "1";
+}
+
+export function resetMemoryState() {
+  memoryState = null;
+}
+
+function loadMemoryState(): AppState {
+  if (memoryState) return memoryState;
+  try {
+    if (fs.existsSync(MEMORY_SNAPSHOT)) {
+      const raw = JSON.parse(fs.readFileSync(MEMORY_SNAPSHOT, "utf8")) as AppState;
+      if (raw?.settings && Array.isArray(raw.plProducts)) {
+        memoryState = pickState(raw);
+        return memoryState;
+      }
+    }
+  } catch {
+    /* empty */
+  }
+  memoryState = pickState(SEED);
+  return memoryState;
+}
+
+function saveMemoryState(state: AppState) {
+  memoryState = state;
+  try {
+    fs.mkdirSync(path.dirname(MEMORY_SNAPSHOT), { recursive: true });
+    fs.writeFileSync(MEMORY_SNAPSHOT, JSON.stringify(state, null, 2), "utf8");
+  } catch {
+    /* disk optional */
+  }
+}
 
 let pool: Pool | null = null;
 

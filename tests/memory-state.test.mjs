@@ -8,8 +8,7 @@ process.env.STATE_MEMORY = "1";
 const snap = path.join(process.cwd(), "data", "memory-snapshot.json");
 if (fs.existsSync(snap)) fs.unlinkSync(snap);
 
-const { loadState, saveState } = await import("../src/lib/persist.ts");
-const { resetMemoryState } = await import("../src/lib/memory-state.ts");
+const { loadState, saveState, resetMemoryState } = await import("../src/lib/persist.ts");
 
 test("memory server: /api/state backend round-trip in RAM", async () => {
   resetMemoryState();
