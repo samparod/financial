@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useCod } from "@/lib/store";
 import { sellingPriceUsd } from "@/lib/cod";
 import { money } from "@/lib/format";
+import { AlibabaUrlField } from "@/components/AlibabaUrlField";
 import { Badge, Btn, Num, PageHead, TextField } from "@/components/ui";
 import { Explain, LabelHelp, Tip } from "@/components/Explain";
 import { useT } from "@/lib/lang";
@@ -107,7 +108,14 @@ export default function WinnersPage() {
                 <Num label={t("win.china")} value={w.chinaPrice} onChange={(n) => s.setWinner(w.id, { chinaPrice: n })} step={0.01} help="win.china" />
                 <Num label={t("win.price")} value={w.sellingPrice} onChange={(n) => s.setWinner(w.id, { sellingPrice: n })} step={0.1} help="win.price" />
                 <Num label={t("win.weight")} value={w.weightKg} onChange={(n) => s.setWinner(w.id, { weightKg: n })} step={0.01} help="win.weight" />
-                <TextField label={t("win.url")} value={w.alibabaUrl} onChange={(v) => s.setWinner(w.id, { alibabaUrl: v })} help="win.url" />
+                <AlibabaUrlField
+                  className="col-span-2"
+                  label={t("ab.url")}
+                  value={w.alibabaUrl}
+                  onChange={(v) => s.setWinner(w.id, { alibabaUrl: v })}
+                  help="win.url"
+                  openTitle={t("ab.openUrl")}
+                />
               </div>
               <Explain id="win.criteria" open={false} />
               <div className="grid grid-cols-2 gap-2 mb-3">
