@@ -294,9 +294,14 @@ export const sheetHelp: HelpBundle = {
     "dz.page": {
       title: "واش هي حسابات الجزائر؟",
       meaning:
-        "نفس التجارة تظهر بالدولار وبالدينار. 1 دولار = سعر الصرف (usdToDzd) دينار. تبدّل الصرف من الخانة تحت.",
+        "محاكاة مثل الخليج: تكتب الليدات والتأكيد والتوصيل. التكلفة وسعر البيع بالدينار؛ الإعلان (CPL) ورسوم المنصة بالدولار من الإعدادات. الشبكة تعرض $ وتحتها تلميح بالدينار.",
       example:
-        "1) إذا 1 دولار = 250 د.ج وصافيك 20 دولار، بالدينار 5000 د.ج. 2) فوق: صافي الشهر من ورقة الجزائر. 3) الجدول: محاكاة 100 ليد عمودين دولار / دينار.",
+        "1) 1000 ليد، تكلفة 1000 د.ج، سعر 6900 د.ج، CPL 3$. 2) اقرأ الربح و EPD. 3) «من الشيت» يملأ من منتج الجزائر في الحسابات.",
+    },
+    "dz.sheetProducts": {
+      title: "منتجات من ورقة الحسابات",
+      meaning: "أرقام حقيقية من تبويب الجزائر في الحسابات — مشي المحاكاة. المبيعات بالدينار كما في الشيت، الربح محسوب بنفس معادلات Cost of Service.",
+      example: "1) كورا: مبيعات 161 000 د.ج، ربح و EPD من Delivered والتكاليف. 2) قارن مع المحاكاة فوق إذا المدخلات نفسها. 3) إذا يختلفوا، راجع الليدات والإعلان في الشيت.",
     },
     "dz.netUsd": {
       title: "صافي الدولار",
@@ -641,9 +646,14 @@ export const sheetHelp: HelpBundle = {
     "dz.page": {
       title: "C’est quoi les comptes Algérie ?",
       meaning:
-        "Le même business en dollars ET en dinars. 1 dollar = usdToDzd dinars. Vous changez le taux dans la case en dessous.",
+        "Simulation comme le Golfe : leads, confirmation, livraison. Coût et prix en DZD ; pub (CPL) et frais plateforme en $ (réglages). Les KPI montrent $ avec un rappel en DZD.",
       example:
-        "1) 1 $ = 250 DA et net 20 $ → 5000 DA. 2) En haut : net du mois depuis la feuille Algérie. 3) Tableau : simulation 100 leads, deux colonnes.",
+        "1) 1000 leads, coût 1000 DA, prix 6900 DA, CPL 3 $. 2) Lisez profit et EPD. 3) « Depuis la feuille » remplit depuis un produit Algérie.",
+    },
+    "dz.sheetProducts": {
+      title: "Produits depuis la feuille P&L",
+      meaning: "Chiffres réels du onglet Algérie — pas la simulation. Ventes en DZD comme saisies ; profit = mêmes formules Cost of Service.",
+      example: "1) Comparez avec la simulation si les entrées sont identiques. 2) Si ça diverge, vérifiez leads et pub sur la feuille.",
     },
     "dz.netUsd": {
       title: "Net en dollar",
@@ -986,9 +996,14 @@ export const sheetHelp: HelpBundle = {
     "dz.page": {
       title: "What is the Algeria page?",
       meaning:
-        "The same business in USD and DZD. 1 dollar = usdToDzd dinars. Change the rate in the box below.",
+        "Gulf-style simulation: leads, confirm, deliver rates. Product cost and sell price in DZD; ads (CPL) and platform fees in USD from settings. KPIs show $ with a DZD hint.",
       example:
-        "1) If 1 dollar = 250 DZD and net is $20, that is 5000 DZD. 2) Top: this month’s net from the Algeria sheet. 3) Table: 100-lead simulation in two columns.",
+        "1) 1000 leads, cost 1000 DZD, price 6900 DZD, CPL $3. 2) Read profit and EPD. 3) “From sheet” fills from an Algeria product on Accounts.",
+    },
+    "dz.sheetProducts": {
+      title: "Products from the accounts sheet",
+      meaning: "Real numbers from the Algeria tab — not the simulator. Sales in DZD as entered; profit uses the same Cost of Service math.",
+      example: "1) Match the simulator when inputs are the same. 2) If not, check leads and ad spend on the sheet.",
     },
     "dz.netUsd": {
       title: "Net in USD",
