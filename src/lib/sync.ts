@@ -55,7 +55,8 @@ async function fetchState(timeoutMs = 8000): Promise<AppState | null> {
 }
 
 export function useServerSync() {
-  const [mode, setMode] = useState<"local" | "server" | "offline">("local");
+  const [mode, setMode] = useState<"local" | "server" | "memory" | "offline">("local");
+  const memoryServer = process.env.NEXT_PUBLIC_MEMORY_SERVER === "1";
   const timer = useRef<number | null>(null);
   const skip = useRef(true);
   const lastLocal = useRef(0);
@@ -82,7 +83,7 @@ export function useServerSync() {
         setMode("local");
         return;
       }
-      if (process.env.NEXT_PUBLIC_LOCAL_ONLY === "1") {
+      if (process.env.NEXT_PUBLIC_LOCAL_ONLY === "1" && !memoryServer) {
         skip.current = false;
         useCod.setState({ hydrated: true });
         setMode("local");
@@ -92,7 +93,7 @@ export function useServerSync() {
       if (stop) return;
       if (data) {
         applyServer(data);
-        setMode("server");
+        setMode(memoryServer ? "memory" : "server");
         window.setTimeout(() => {
           skip.current = false;
         }, 400);
@@ -130,7 +131,7 @@ export function useServerSync() {
         }, 500);
         return;
       }
-      if (mode !== "server") return;
+      if (mode !== "server" && mode !== "memory") return;
       lastLocal.current = Date.now();
       if (timer.current) window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => {
@@ -148,7 +149,7 @@ export function useServerSync() {
   }, [mode]);
 
   useEffect(() => {
-    if (mode !== "server") return;
+    if (mode !== "server" && mode !== "memory") return;
     const tick = async () => {
       if (document.hidden) return;
       if (Date.now() - lastLocal.current < 2500) return;

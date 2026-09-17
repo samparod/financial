@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { Pool } from "pg";
+import { loadMemoryState, memoryModeEnabled, saveMemoryState } from "./memory-state";
 import { SEED } from "./seed";
 import type { AppState } from "./types";
 
@@ -38,6 +39,9 @@ export function pickState(s: AppState): AppState {
 }
 
 export async function loadState(): Promise<AppState> {
+  if (memoryModeEnabled()) {
+    return loadMemoryState();
+  }
   const db = await getPool();
   if (db) {
     const r = await db.query("SELECT data FROM app_state WHERE id = 1");
@@ -63,6 +67,10 @@ export async function loadState(): Promise<AppState> {
 
 export async function saveState(state: AppState) {
   const data = pickState(state);
+  if (memoryModeEnabled()) {
+    saveMemoryState(data);
+    return;
+  }
   const db = await getPool();
   if (db) {
     await db.query(

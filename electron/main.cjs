@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, shell, Menu } = require("electron");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const { createStateServer } = require("./state-server.cjs");
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -125,21 +126,36 @@ async function createWindow() {
   await win.loadURL(url);
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  const stateApi = createStateServer({
+    stateFile,
+    getDefault: () => null,
+  });
+
   ipcMain.handle("state:load", () => {
-    try {
-      const f = stateFile();
-      if (!fs.existsSync(f)) return null;
-      return JSON.parse(fs.readFileSync(f, "utf8"));
-    } catch {
-      return null;
-    }
+    const s = stateApi.getState();
+    if (!s) return null;
+    return {
+      app: "stability-cod",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      state: s,
+    };
   });
   ipcMain.handle("state:save", (_e, data) => {
-    fs.mkdirSync(app.getPath("userData"), { recursive: true });
-    fs.writeFileSync(stateFile(), JSON.stringify(data, null, 2), "utf8");
+    stateApi.setState(data);
   });
   ipcMain.handle("state:dir", () => app.getPath("userData"));
+
+  let apiPort = 0;
+  try {
+    const r = await stateApi.startHttpServer();
+    apiPort = r.port;
+  } catch {
+    apiPort = 0;
+  }
+  ipcMain.handle("state:apiPort", () => apiPort);
+
   return createWindow();
 });
 

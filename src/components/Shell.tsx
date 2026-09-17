@@ -264,14 +264,24 @@ function SyncFoot({
   return (
     <div className="p-4 text-[11px] text-mute border-t border-line space-y-2">
       <div>{t("brand.foot")}</div>
-      <div className={sync === "server" ? "text-profit" : sync === "offline" ? "text-danger" : "text-mute"}>
-        {sync === "server"
-          ? t("sync.server")
-          : sync === "offline"
-            ? t("sync.offline")
-            : isDesktop
-              ? t("sync.desktop")
-              : t("sync.local")}
+      <div
+        className={
+          sync === "server" || sync === "memory"
+            ? "text-profit"
+            : sync === "offline"
+              ? "text-danger"
+              : "text-mute"
+        }
+      >
+        {sync === "memory"
+          ? t("sync.memory")
+          : sync === "server"
+            ? t("sync.server")
+            : sync === "offline"
+              ? t("sync.offline")
+              : isDesktop
+                ? t("sync.desktop")
+                : t("sync.local")}
       </div>
       <button
         type="button"

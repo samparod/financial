@@ -70,23 +70,31 @@ npm run desktop:pack
 npm run desktop:dev
 ```
 
-### 2) متصفح على نفس الحاسوب فقط (بدون Electron)
+### 2) سيرفر = ذاكرة الحاسوب (RAM) — موصى للتطوير المحلي
 
-البيانات في **localStorage** المتصفح، بلا سيرفر:
+Next يخدم على `localhost` و **`/api/state` يخزّن في RAM** داخل عملية Node على جهازك (مش Postgres ولا سحابة). نسخة احتياطية تلقائية في `data/memory-snapshot.json` عند كل حفظ.
+
+```
+npm run dev:memory
+```
+
+أو دبل كليك: **`start-memory.bat`**  
+افتح: http://localhost:3070 — تحت القائمة يظهر: *سيرفر محلي — البيانات في ذاكرة الحاسوب*.
+
+### 3) متصفح فقط (localStorage، بلا `/api/state`)
 
 ```
 npm run dev:local
 ```
 
-ثم افتح: http://localhost:3070
-
-### 3) موقع على الإنترنت (`samparo.pro`)
+### 4) موقع على الإنترنت (`samparo.pro`)
 
 اختياري ومنفصل — للتيليغرام والمزامنة على سيرفر. **ما تحتاجوش** إذا كل شغلك محلي.
 
-| | تطبيق ويندوز | `dev:local` | samparo.pro |
-|---|---|---|---|
-| البيانات | ملف JSON على القرص | متصفح فقط | سيرفر + متصفح |
-| بدون إنترنت | نعم | نعم | لا |
-| تيليغرام | لا | لا | نعم |
+| | تطبيق ويندوز | `dev:memory` | `dev:local` | samparo.pro |
+|---|---|---|---|---|
+| البيانات | RAM + ملف JSON | RAM + snapshot | localStorage | Postgres |
+| `/api/state` | نعم (Electron RAM) | نعم | لا | نعم |
+| بدون إنترنت | نعم | نعم | نعم | لا |
+| تيليغرام | لا | لا | لا | نعم |
 
