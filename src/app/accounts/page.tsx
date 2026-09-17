@@ -8,10 +8,19 @@ import { money } from "@/lib/format";
 import { Btn, Num, PageHead } from "@/components/ui";
 import { Explain, LabelHelp } from "@/components/Explain";
 import { useT } from "@/lib/lang";
-import type { PlProduct, Region } from "@/lib/types";
+import type { Currency, PlProduct, Region } from "@/lib/types";
 
-/** P&L formulas match the Excel sheet — amounts are USD */
-const PL_CUR = "USD" as const;
+/** Gulf: store and show USD. Algeria: store USD (for calcPl), show and edit DZD. */
+function sheetMoney(region: Region, usdToDzd: number) {
+  const isDz = region === "algeria";
+  const fx = Math.max(usdToDzd, 1);
+  const cur: Currency = isDz ? "DZD" : "USD";
+  const digits = isDz ? 0 : 2;
+  const toDisplay = (usd: number) => (isDz ? usd * fx : usd);
+  const toUsd = (display: number) => (isDz ? display / fx : display);
+  const formatUsd = (usd: number) => money(toDisplay(usd), cur, digits);
+  return { isDz, cur, digits, fx, toDisplay, toUsd, formatUsd, prefix: isDz ? "د.ج" : "$" };
+}
 
 function fmt(n: number, ints = false) {
   if (!Number.isFinite(n)) return "—";
@@ -25,27 +34,36 @@ function CellInput({
   value,
   onChange,
   step = 1,
-  moneyPrefix,
+  money,
+  prefix = "$",
+  displayValue,
+  onDisplayChange,
 }: {
   value: number;
   onChange: (n: number) => void;
   step?: number;
-  moneyPrefix?: boolean;
+  money?: boolean;
+  prefix?: string;
+  /** When set, the input shows/edits display units (e.g. DZD) while onChange still receives USD. */
+  displayValue?: number;
+  onDisplayChange?: (display: number) => void;
 }) {
+  const shown = displayValue ?? value;
+  const onVal = onDisplayChange ?? onChange;
   const input = (
     <input
       type="number"
       step={step}
-      value={Number.isFinite(value) ? value : 0}
-      onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+      value={Number.isFinite(shown) ? shown : 0}
+      onChange={(e) => onVal(parseFloat(e.target.value) || 0)}
       className="w-full bg-[#0b1220] border border-line rounded px-1 py-1.5 text-center text-sm tabular-nums outline-none focus:border-gold"
       dir="ltr"
     />
   );
-  if (!moneyPrefix) return input;
+  if (!money) return input;
   return (
     <div className="flex items-center gap-0.5 min-w-0" dir="ltr">
-      <span className="text-[10px] text-gold shrink-0">$</span>
+      <span className="text-[10px] text-gold shrink-0 min-w-[1.75rem] text-end">{prefix}</span>
       {input}
     </div>
   );
@@ -56,11 +74,13 @@ function Calc({
   values,
   ints,
   className = "",
+  formatUsd,
 }: {
   label: ReactNode;
   values: number[];
   ints?: boolean;
   className?: string;
+  formatUsd: (usd: number) => string;
 }) {
   const sum = values.reduce((a, b) => a + b, 0);
   return (
@@ -68,11 +88,11 @@ function Calc({
       <td className="p-2 align-top font-medium min-w-[140px]">{label}</td>
       {values.map((v, i) => (
         <td key={i} className="p-2 text-center tabular-nums bg-[#14304a] text-[#9fd6ff]" dir="ltr">
-          {ints ? fmt(v, true) : money(v, PL_CUR)}
+          {ints ? fmt(v, true) : formatUsd(v)}
         </td>
       ))}
       <td className="p-2 text-center tabular-nums bg-[#1a3a58] font-bold text-[#9fd6ff]" dir="ltr">
-        {ints ? fmt(sum, true) : money(sum, PL_CUR)}
+        {ints ? fmt(sum, true) : formatUsd(sum)}
       </td>
     </tr>
   );
@@ -91,8 +111,21 @@ export default function AccountsPage() {
   const profitSum = calcs.reduce((a, c) => a + c.profit, 0);
   const ordersSum = rows.reduce((a, p) => a + p.orders, 0);
   const net = profitSum - ot;
+  const sm = sheetMoney(region, s.settings.usdToDzd);
 
   const set = (p: PlProduct, patch: Partial<PlProduct>) => s.setPl(p.id, patch);
+
+  const moneyCell = (p: PlProduct, key: keyof PlProduct, step = 0.01) => (
+    <CellInput
+      value={p[key] as number}
+      step={sm.isDz ? 1 : step}
+      money
+      prefix={sm.prefix}
+      displayValue={sm.toDisplay(p[key] as number)}
+      onChange={() => undefined}
+      onDisplayChange={(d) => set(p, { [key]: sm.toUsd(d) })}
+    />
+  );
 
   const inputRows = [
     { key: "productCost" as const, help: "sheet.productCost", step: 0.01, money: true },
@@ -136,9 +169,13 @@ export default function AccountsPage() {
       <p className="text-xs text-mute mb-2">
         {t("sheet.formulaHint")} — <span className="text-gold font-mono">{t("sheet.formula")}</span>
       </p>
-      <p className="text-xs text-gold mb-2 font-semibold">{t("sheet.currencyUsd")}</p>
-      {region === "algeria" && (
-        <p className="text-xs text-mute mb-2">{t("sheet.algeriaCurrencyNote")}</p>
+      <p className="text-xs text-gold mb-2 font-semibold">
+        {sm.isDz ? t("sheet.currencyDzd") : t("sheet.currencyUsd")}
+      </p>
+      {sm.isDz && (
+        <p className="text-xs text-mute mb-2">
+          {t("sheet.algeriaCurrencyNote", { fx: sm.fx })}
+        </p>
       )}
       <p className="text-xs text-mute mb-3">
         {t("sheet.stockNotHere")}{" "}
@@ -172,17 +209,20 @@ export default function AccountsPage() {
                 </td>
                 {rows.map((p) => (
                   <td key={p.id} className="p-1">
-                    <CellInput
-                      value={p[f.key] as number}
-                      step={f.step ?? 1}
-                      moneyPrefix={f.money}
-                      onChange={(n) => set(p, { [f.key]: n })}
-                    />
+                    {f.money ? (
+                      moneyCell(p, f.key, f.step ?? 0.01)
+                    ) : (
+                      <CellInput
+                        value={p[f.key] as number}
+                        step={f.step ?? 1}
+                        onChange={(n) => set(p, { [f.key]: n })}
+                      />
+                    )}
                   </td>
                 ))}
                 <td className="p-2 text-center tabular-nums" dir="ltr">
                   {f.money
-                    ? money(rows.reduce((a, p) => a + (p[f.key] as number), 0), PL_CUR)
+                    ? sm.formatUsd(rows.reduce((a, p) => a + (p[f.key] as number), 0))
                     : fmt(rows.reduce((a, p) => a + (p[f.key] as number), 0), true)}
                 </td>
               </tr>
@@ -196,6 +236,7 @@ export default function AccountsPage() {
             <Calc
               label={<LabelHelp id="sheet.codCollected">{t("sheet.codCollected")}</LabelHelp>}
               values={rows.map((p) => p.totalSales)}
+              formatUsd={sm.formatUsd}
             />
 
             <tr className="bg-[#152033]">
@@ -218,16 +259,11 @@ export default function AccountsPage() {
                 </td>
                 {rows.map((p) => (
                   <td key={p.id} className="p-1">
-                    <CellInput
-                      value={p[f.key] as number}
-                      step={0.01}
-                      moneyPrefix
-                      onChange={(n) => set(p, { [f.key]: n })}
-                    />
+                    {moneyCell(p, f.key)}
                   </td>
                 ))}
                 <td className="p-2 text-center tabular-nums" dir="ltr">
-                  {money(rows.reduce((a, p) => a + (p[f.key] as number), 0), PL_CUR)}
+                  {sm.formatUsd(rows.reduce((a, p) => a + (p[f.key] as number), 0))}
                 </td>
               </tr>
             ))}
@@ -235,6 +271,7 @@ export default function AccountsPage() {
             <Calc
               label={<LabelHelp id="sheet.productLine">{t("sheet.productLine")}</LabelHelp>}
               values={calcs.map((c) => c.product)}
+              formatUsd={sm.formatUsd}
             />
 
             {showBreak && (
@@ -242,22 +279,27 @@ export default function AccountsPage() {
                 <Calc
                   label={<LabelHelp id="sheet.leadFee">{t("sheet.leadFee")}</LabelHelp>}
                   values={calcs.map((c) => c.cos.lead)}
+                  formatUsd={sm.formatUsd}
                 />
                 <Calc
                   label={<LabelHelp id="sheet.confirmFee">{t("sheet.confirmFee")}</LabelHelp>}
                   values={calcs.map((c) => c.cos.confirm)}
+                  formatUsd={sm.formatUsd}
                 />
                 <Calc
                   label={<LabelHelp id="sheet.deliverFee">{t("sheet.deliverFee")}</LabelHelp>}
                   values={calcs.map((c) => c.cos.delivered)}
+                  formatUsd={sm.formatUsd}
                 />
                 <Calc
                   label={<LabelHelp id="sheet.extraFee">{t("sheet.extraFee")}</LabelHelp>}
                   values={calcs.map((c) => c.cos.extra)}
+                  formatUsd={sm.formatUsd}
                 />
                 <Calc
                   label={<LabelHelp id="sheet.codFee">{t("sheet.codFee")}</LabelHelp>}
                   values={calcs.map((c) => c.cos.cod)}
+                  formatUsd={sm.formatUsd}
                 />
               </>
             )}
@@ -266,6 +308,7 @@ export default function AccountsPage() {
               label={<LabelHelp id="sheet.serviceCost">{t("sheet.serviceCost")}</LabelHelp>}
               values={calcs.map((c) => c.service)}
               className="font-bold"
+              formatUsd={sm.formatUsd}
             />
 
             <tr className="border-t border-line">
@@ -274,11 +317,11 @@ export default function AccountsPage() {
               </td>
               {rows.map((p) => (
                 <td key={p.id} className="p-1">
-                  <CellInput value={p.bonus} step={0.01} moneyPrefix onChange={(n) => set(p, { bonus: n })} />
+                  {moneyCell(p, "bonus")}
                 </td>
               ))}
               <td className="p-2 text-center" dir="ltr">
-                {money(rows.reduce((a, p) => a + p.bonus, 0), PL_CUR)}
+                {sm.formatUsd(rows.reduce((a, p) => a + p.bonus, 0))}
               </td>
             </tr>
 
@@ -286,6 +329,7 @@ export default function AccountsPage() {
               label={<LabelHelp id="sheet.totalCos">{t("sheet.totalCos")}</LabelHelp>}
               values={calcs.map((c) => c.totalCost)}
               className="font-bold"
+              formatUsd={sm.formatUsd}
             />
 
             <tr className="border-t border-line bg-[#0d2818]">
@@ -298,14 +342,14 @@ export default function AccountsPage() {
                   className={`p-2 text-center font-bold tabular-nums ${c.profit >= 0 ? "text-profit" : "text-danger"}`}
                   dir="ltr"
                 >
-                  {money(c.profit, PL_CUR)}
+                  {sm.formatUsd(c.profit)}
                 </td>
               ))}
               <td
                 className={`p-2 text-center font-bold ${profitSum >= 0 ? "text-profit" : "text-danger"}`}
                 dir="ltr"
               >
-                {money(profitSum, PL_CUR)}
+                {sm.formatUsd(profitSum)}
               </td>
             </tr>
 
@@ -317,31 +361,38 @@ export default function AccountsPage() {
             <Calc
               label={<LabelHelp id="sheet.ads">{t("sheet.ads")}</LabelHelp>}
               values={calcs.map((c) => c.adsPerOrder)}
+              formatUsd={sm.formatUsd}
             />
             <Calc
               label={<LabelHelp id="sheet.test">{t("sheet.test")}</LabelHelp>}
               values={calcs.map((c) => c.testPerOrder)}
+              formatUsd={sm.formatUsd}
             />
             <Calc
               label={<LabelHelp id="sheet.adAccount">{t("sheet.adAccount")}</LabelHelp>}
               values={calcs.map((c) => c.adAccPerOrder)}
+              formatUsd={sm.formatUsd}
             />
             <Calc
               label={<LabelHelp id="sheet.productLine">{t("sheet.productLine")}</LabelHelp>}
               values={calcs.map((c) => c.productPerOrder)}
+              formatUsd={sm.formatUsd}
             />
             <Calc
               label={<LabelHelp id="sheet.serviceCost">{t("sheet.serviceCost")}</LabelHelp>}
               values={calcs.map((c) => c.servicePerOrder)}
+              formatUsd={sm.formatUsd}
             />
             <Calc
               label={<LabelHelp id="sheet.epo">{t("sheet.epo")}</LabelHelp>}
               values={calcs.map((c) => c.epo)}
+              formatUsd={sm.formatUsd}
             />
             <Calc
               label={<LabelHelp id="sheet.epd">{t("sheet.epd")}</LabelHelp>}
               values={calcs.map((c) => c.epd)}
               className="font-bold"
+              formatUsd={sm.formatUsd}
             />
 
             <tr>
@@ -370,51 +421,51 @@ export default function AccountsPage() {
           </h2>
           <div className="grid grid-cols-2 gap-3 mt-4">
             <Num
-              label={`${t("sheet.salaries")} $`}
-              value={ops.salaries}
-              onChange={(n) => s.setOps(region, { salaries: n })}
+              label={`${t("sheet.salaries")} ${sm.prefix}`}
+              value={sm.toDisplay(ops.salaries)}
+              onChange={(n) => s.setOps(region, { salaries: sm.toUsd(n) })}
               help="sheet.salaries"
             />
             <Num
-              label={`${t("sheet.vat")} $`}
-              value={ops.vatDuty}
-              onChange={(n) => s.setOps(region, { vatDuty: n })}
+              label={`${t("sheet.vat")} ${sm.prefix}`}
+              value={sm.toDisplay(ops.vatDuty)}
+              onChange={(n) => s.setOps(region, { vatDuty: sm.toUsd(n) })}
               help="sheet.vat"
             />
             <Num
-              label={`${t("sheet.rent")} $`}
-              value={ops.rent}
-              onChange={(n) => s.setOps(region, { rent: n })}
+              label={`${t("sheet.rent")} ${sm.prefix}`}
+              value={sm.toDisplay(ops.rent)}
+              onChange={(n) => s.setOps(region, { rent: sm.toUsd(n) })}
               help="sheet.rent"
             />
             <Num
-              label={`${t("sheet.utilities")} $`}
-              value={ops.utilities}
-              onChange={(n) => s.setOps(region, { utilities: n })}
+              label={`${t("sheet.utilities")} ${sm.prefix}`}
+              value={sm.toDisplay(ops.utilities)}
+              onChange={(n) => s.setOps(region, { utilities: sm.toUsd(n) })}
               help="sheet.utilities"
             />
             <Num
-              label={`${t("sheet.mgmt")} $`}
-              value={ops.management}
-              onChange={(n) => s.setOps(region, { management: n })}
+              label={`${t("sheet.mgmt")} ${sm.prefix}`}
+              value={sm.toDisplay(ops.management)}
+              onChange={(n) => s.setOps(region, { management: sm.toUsd(n) })}
               help="sheet.mgmt"
             />
             <Num
-              label={`${t("sheet.extra")} $`}
-              value={ops.extra}
-              onChange={(n) => s.setOps(region, { extra: n })}
+              label={`${t("sheet.extra")} ${sm.prefix}`}
+              value={sm.toDisplay(ops.extra)}
+              onChange={(n) => s.setOps(region, { extra: sm.toUsd(n) })}
               help="sheet.extra"
             />
           </div>
           <div className="mt-4 flex justify-between border-t border-line pt-3">
             <LabelHelp id="sheet.opsTotal">{t("sheet.opsTotal")}</LabelHelp>
-            <span className="font-bold">{money(ot)}</span>
+            <span className="font-bold">{sm.formatUsd(ot)}</span>
           </div>
           <div className="flex justify-between text-sm mt-1">
             <LabelHelp id="sheet.costPerOp">
               <span className="text-mute">{t("sheet.costPerOp")}</span>
             </LabelHelp>
-            <span>{money(ordersSum ? ot / ordersSum : 0)}</span>
+            <span>{sm.formatUsd(ordersSum ? ot / ordersSum : 0)}</span>
           </div>
         </div>
         <div className="card p-5">
@@ -422,13 +473,13 @@ export default function AccountsPage() {
             <LabelHelp id="sheet.net">{t("sheet.net")}</LabelHelp>
           </h2>
           <div className={`text-4xl font-extrabold tabular-nums ${net >= 0 ? "text-profit" : "text-danger"}`}>
-            {money(net)}
+            {sm.formatUsd(net)}
           </div>
           <p className="text-sm text-mute mt-2">
-            {t("sheet.profits")} {money(profitSum)} − {t("sheet.ops")} {money(ot)}
+            {t("sheet.profits")} {sm.formatUsd(profitSum)} − {t("sheet.ops")} {sm.formatUsd(ot)}
           </p>
-          {region === "algeria" && (
-            <p className="text-sm mt-3 text-gold font-bold">{money(net * s.settings.usdToDzd, "DZD", 0)}</p>
+          {sm.isDz && (
+            <p className="text-xs text-mute mt-3">{t("sheet.usdRef", { usd: money(net, "USD") })}</p>
           )}
         </div>
       </div>
