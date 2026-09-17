@@ -257,31 +257,33 @@ export function plCollectedSales(p: PlProduct) {
   return p.totalSales;
 }
 
-export function plSalesUsd(p: PlProduct, fxToDzd: number) {
-  return round2(plMoneyToUsd(plCollectedSales(p), p, fxToDzd));
+/** Algeria sheet amounts are entered in DZD; Gulf in USD. */
+export function plSalesUsd(p: PlProduct, fxToDzd: number, sheetInDzd = false) {
+  return round2(plMoneyToUsd(plCollectedSales(p), fxToDzd, sheetInDzd));
 }
 
 export function stockValueAtCost(item: StockItem) {
   return round2(Math.max(0, item.qty) * Math.max(0, item.unitCostUsd));
 }
 
-function plMoneyToUsd(n: number, p: PlProduct, fxToDzd: number) {
-  return p.currency === "DZD" && fxToDzd > 0 ? n / fxToDzd : n;
+function plMoneyToUsd(n: number, fxToDzd: number, sheetInDzd: boolean) {
+  return sheetInDzd && fxToDzd > 0 ? n / fxToDzd : n;
 }
 
-export function calcPl(p: PlProduct, fees: Fees, fxToDzd = 0) {
+export function calcPl(p: PlProduct, fees: Fees, fxToDzd = 0, sheetInDzd = false) {
+  const usd = (n: number) => plMoneyToUsd(n, fxToDzd, sheetInDzd);
   const salesLocal = plCollectedSales(p);
-  const sales = plMoneyToUsd(salesLocal, p, fxToDzd);
-  const product = plMoneyToUsd(p.productCost, p, fxToDzd) * p.delivered;
+  const sales = usd(salesLocal);
+  const product = usd(p.productCost) * p.delivered;
   const cos = costOfService(p.leads, p.orders, p.delivered, sales, fees);
   const service = cos.total;
   const totalCost =
-    plMoneyToUsd(p.adsSpend, p, fxToDzd) +
-    plMoneyToUsd(p.testSpend, p, fxToDzd) +
-    plMoneyToUsd(p.adAccount, p, fxToDzd) +
+    usd(p.adsSpend) +
+    usd(p.testSpend) +
+    usd(p.adAccount) +
     product +
     service +
-    plMoneyToUsd(p.bonus, p, fxToDzd);
+    usd(p.bonus);
   const profit = sales - totalCost;
   const epo = p.orders > 0 ? profit / p.orders : 0;
   const epd = p.delivered > 0 ? profit / p.delivered : 0;
@@ -297,9 +299,9 @@ export function calcPl(p: PlProduct, fees: Fees, fxToDzd = 0) {
     epd: round2(epd),
     confirmRate,
     deliveredRate,
-    adsPerOrder: p.orders > 0 ? round2(p.adsSpend / p.orders) : 0,
-    testPerOrder: p.orders > 0 ? round2(p.testSpend / p.orders) : 0,
-    adAccPerOrder: p.orders > 0 ? round2(p.adAccount / p.orders) : 0,
+    adsPerOrder: p.orders > 0 ? round2(usd(p.adsSpend) / p.orders) : 0,
+    testPerOrder: p.orders > 0 ? round2(usd(p.testSpend) / p.orders) : 0,
+    adAccPerOrder: p.orders > 0 ? round2(usd(p.adAccount) / p.orders) : 0,
     productPerOrder: p.orders > 0 ? round2(product / p.orders) : 0,
     servicePerOrder: p.orders > 0 ? round2(service / p.orders) : 0,
   };

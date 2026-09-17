@@ -49,7 +49,8 @@ export default function CashflowPage() {
   const pl = s.plProducts.filter((p) => p.region === region);
   const fees = region === "gulf" ? s.settings.gulfFees : s.settings.algeriaFeesUsd;
   const plProfit = pl.reduce(
-    (a, p) => a + calcPl(p, fees, region === "algeria" ? s.settings.usdToDzd : 0).profit,
+    (a, p) =>
+      a + calcPl(p, fees, region === "algeria" ? s.settings.usdToDzd : 0, region === "algeria").profit,
     0
   );
 

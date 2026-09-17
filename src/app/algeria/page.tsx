@@ -15,7 +15,7 @@ export default function AlgeriaPage() {
   const fees = s.settings.algeriaFeesUsd;
   const rows = s.plProducts.filter((p) => p.region === "algeria");
   const ops = s.operations.find((o) => o.region === "algeria")!;
-  const profitUsd = rows.reduce((a, p) => a + calcPl(p, fees, s.settings.usdToDzd).profit, 0);
+  const profitUsd = rows.reduce((a, p) => a + calcPl(p, fees, s.settings.usdToDzd, true).profit, 0);
   const netUsd = profitUsd - opsTotal(ops);
   const st = calcStability(
     { ...s.stability.algeria, fxToUsd: fx },
@@ -139,7 +139,7 @@ export default function AlgeriaPage() {
           </thead>
           <tbody>
             {rows.map((p) => {
-              const c = calcPl(p, fees, s.settings.usdToDzd);
+              const c = calcPl(p, fees, s.settings.usdToDzd, true);
               return (
                 <tr key={p.id} className="border-t border-line">
                   <td className="p-3 font-semibold">{p.name}</td>

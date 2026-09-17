@@ -94,17 +94,17 @@ export default function AccountsPage() {
   const s = useCod();
   const fees = region === "gulf" ? s.settings.gulfFees : s.settings.algeriaFeesUsd;
   const fx = s.settings.usdToDzd;
+  const useDzd = region === "algeria";
   const rows = s.plProducts.filter((p) => p.region === region);
   const regionStock = s.stock.filter((x) => x.region === region);
   const ops = s.operations.find((o) => o.region === region)!;
-  const calcs = rows.map((p) => calcPl(p, fees, fx));
+  const calcs = rows.map((p) => calcPl(p, fees, fx, useDzd));
   const ot = opsTotal(ops);
   const profitSum = calcs.reduce((a, c) => a + c.profit, 0);
   const ordersSum = rows.reduce((a, p) => a + p.orders, 0);
   const net = profitSum - ot;
 
-  const moneySuffix = region === "algeria" ? "د.ج" : undefined;
-  const useDzd = region === "algeria";
+  const moneySuffix = useDzd ? "د.ج" : undefined;
   const showMoney = (usd: number, digits = 2) =>
     useDzd ? money(usd * fx, "DZD", digits === 0 ? 0 : 2) : money(usd, PL_CUR, digits);
 
@@ -275,7 +275,7 @@ export default function AccountsPage() {
             </tr>
             <Calc
               label={<LabelHelp id="sheet.codCollected">{t("sheet.codCollected")}</LabelHelp>}
-              values={rows.map((p) => plSalesUsd(p, fx))}
+              values={rows.map((p) => plSalesUsd(p, fx, useDzd))}
               formatUsd={showMoney}
             />
 
@@ -365,7 +365,13 @@ export default function AccountsPage() {
               </td>
               {rows.map((p) => (
                 <td key={p.id} className="p-1">
-                  <CellInput value={p.bonus} step={0.01} moneyPrefix onChange={(n) => set(p, { bonus: n })} />
+                  <CellInput
+                    value={p.bonus}
+                    step={0.01}
+                    moneyPrefix={!useDzd}
+                    moneySuffix={useDzd ? moneySuffix : undefined}
+                    onChange={(n) => set(p, { bonus: n })}
+                  />
                 </td>
               ))}
               <td className="p-2 text-center" dir="ltr">

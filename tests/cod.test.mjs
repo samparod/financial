@@ -100,7 +100,8 @@ test("plCollectedSales uses unit price × delivered when set", () => {
     currency: "DZD",
   };
   assert.equal(plCollectedSales(p), 161000);
-  const c = calcPl(p, DEFAULT_GULF_FEES, 245);
+  const c = calcPl(p, DEFAULT_GULF_FEES, 245, true);
+  assert.ok(Math.abs(c.product * 245 - 70000) < 2, "product line ≈ 70 × 1000 DZD");
   assert.ok(c.profit < 161000 / 245, "profit should be below revenue in USD");
 });
 

@@ -51,7 +51,7 @@ async function summary(state: AppState) {
   const dz = state.plProducts.filter((p) => p.region === "algeria");
   const gp = gulf.reduce((a, p) => a + calcPl(p, state.settings.gulfFees).profit, 0);
   const dp = dz.reduce(
-    (a, p) => a + calcPl(p, state.settings.algeriaFeesUsd, state.settings.usdToDzd).profit,
+    (a, p) => a + calcPl(p, state.settings.algeriaFeesUsd, state.settings.usdToDzd, true).profit,
     0
   );
   const go = state.operations.find((o) => o.region === "gulf");
@@ -136,7 +136,7 @@ export async function handleTelegramUpdate(update: {
     const lines = state.plProducts.map((p) => {
       const fees = p.region === "gulf" ? state.settings.gulfFees : state.settings.algeriaFeesUsd;
       const fx = p.region === "algeria" ? state.settings.usdToDzd : 0;
-      const c = calcPl(p, fees, fx);
+      const c = calcPl(p, fees, fx, p.region === "algeria");
       return `<b>${p.name}</b> [${p.region}]\nLead ${p.leads} · Order ${p.orders} · Del ${p.delivered}\nService ${money(c.service)} · Profit ${money(c.profit)} · EPD ${money(c.epd)}`;
     });
     await send(chatId, lines.join("\n\n") || "لا منتجات.", { reply_markup: menu().keyboard });
@@ -299,7 +299,7 @@ export async function handleTelegramUpdate(update: {
     await saveState(state);
     const fees = p.region === "gulf" ? state.settings.gulfFees : state.settings.algeriaFeesUsd;
     const fx = p.region === "algeria" ? state.settings.usdToDzd : 0;
-    const c = calcPl(p, fees, fx);
+    const c = calcPl(p, fees, fx, p.region === "algeria");
     await send(chatId, `تم تحديث ${p.name}.\nService Cost ${money(c.service)}\nProfit ${money(c.profit)}\nEPD ${money(c.epd)}`, {
       reply_markup: menu().keyboard,
     });
