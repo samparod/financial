@@ -115,6 +115,7 @@ export default function AccountsPage() {
   const ordersSum = rows.reduce((a, p) => a + p.orders, 0);
   const net = profitSum - ot;
   const sm = sheetMoney(region, s.settings.usdToDzd);
+  const formatUsdOnly = (usd: number) => money(usd, "USD");
 
   const set = (p: PlProduct, patch: Partial<PlProduct>) => s.setPl(p.id, patch);
 
@@ -127,6 +128,17 @@ export default function AccountsPage() {
       displayValue={sm.toDisplay(p[key] as number)}
       onChange={() => undefined}
       onDisplayChange={(d) => set(p, { [key]: sm.toUsd(d) })}
+    />
+  );
+
+  /** Meta / ad account spend is always entered in USD (even on Algeria tab). */
+  const moneyCellUsd = (p: PlProduct, key: keyof PlProduct, step = 0.01) => (
+    <CellInput
+      value={p[key] as number}
+      step={step}
+      money
+      prefix="$"
+      onChange={(n) => set(p, { [key]: n })}
     />
   );
 
@@ -267,11 +279,11 @@ export default function AccountsPage() {
                 </td>
                 {rows.map((p) => (
                   <td key={p.id} className="p-1">
-                    {moneyCell(p, f.key)}
+                    {moneyCellUsd(p, f.key)}
                   </td>
                 ))}
                 <td className="p-2 text-center tabular-nums" dir="ltr">
-                  {sm.formatUsd(rows.reduce((a, p) => a + (p[f.key] as number), 0))}
+                  {formatUsdOnly(rows.reduce((a, p) => a + (p[f.key] as number), 0))}
                 </td>
               </tr>
             ))}
@@ -369,17 +381,17 @@ export default function AccountsPage() {
             <Calc
               label={<LabelHelp id="sheet.ads">{t("sheet.ads")}</LabelHelp>}
               values={calcs.map((c) => c.adsPerOrder)}
-              formatUsd={sm.formatUsd}
+              formatUsd={formatUsdOnly}
             />
             <Calc
               label={<LabelHelp id="sheet.test">{t("sheet.test")}</LabelHelp>}
               values={calcs.map((c) => c.testPerOrder)}
-              formatUsd={sm.formatUsd}
+              formatUsd={formatUsdOnly}
             />
             <Calc
               label={<LabelHelp id="sheet.adAccount">{t("sheet.adAccount")}</LabelHelp>}
               values={calcs.map((c) => c.adAccPerOrder)}
-              formatUsd={sm.formatUsd}
+              formatUsd={formatUsdOnly}
             />
             <Calc
               label={<LabelHelp id="sheet.productLine">{t("sheet.productLine")}</LabelHelp>}
