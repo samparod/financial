@@ -24,7 +24,10 @@ test("persist uses Netlify Database and a workspaces table", () => {
   const persist = readFileSync(join(root, "src/lib/persist.ts"), "utf8");
   assert.match(persist, /@netlify\/database/);
   assert.match(persist, /NETLIFY_DB_URL/);
-  assert.match(persist, /CREATE TABLE IF NOT EXISTS workspaces/);
+  assert.match(persist, /CREATE TABLE IF NOT EXISTS public\.workspaces/);
+  assert.match(persist, /httpClient\.query/);
+  assert.match(persist, /fullResults:\s*true/);
+  assert.match(persist, /workspaceRecordFromRows/);
   assert.doesNotMatch(persist, /process\.env\.DATABASE_URL\s*;/);
 });
 

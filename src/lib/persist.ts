@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { workspaceRecordFromRows, normalizeQueryRows } from "./db-rows";
 import { SEED } from "./seed";
 import {
   DEFAULT_WORKSPACE,
@@ -59,6 +60,16 @@ type DbHandle = {
   query: QueryFn;
 };
 
+type NetlifyDb = {
+  sql?: {
+    unsafe?: (sql: string, params?: unknown[], options?: { rowMode?: string }) => Promise<unknown>;
+  };
+  pool?: { query: (sql: string | object, params?: unknown[]) => Promise<unknown> };
+  httpClient?: {
+    query: (sql: string, params?: unknown[], opts?: Record<string, unknown>) => Promise<unknown>;
+  };
+};
+
 let cachedDb: DbHandle | null | undefined;
 let schemaReady: Promise<void> | null = null;
 
@@ -76,24 +87,46 @@ function publicError(e: unknown): string {
   return m.replace(/(postgres(?:ql)?:\/\/)[^\s'"]+/gi, "$1***");
 }
 
-function asRows(result: unknown): Record<string, unknown>[] {
-  if (Array.isArray(result)) return result as Record<string, unknown>[];
-  if (result && typeof result === "object" && Array.isArray((result as { rows?: unknown }).rows)) {
-    return (result as { rows: Record<string, unknown>[] }).rows;
-  }
-  return [];
-}
+/**
+ * Run a parameterized query on the same Netlify Database handle for reads and writes.
+ *
+ * Prefer neon HTTP `httpClient.query(..., { fullResults: true })` over waddler
+ * `sql.unsafe()`. Waddler unwraps `{ rows }` from the neon result; when neon
+ * already returns the row array, that unwrap is `undefined` and SELECT looks
+ * empty while INSERT still persists (result ignored).
+ */
+async function queryNetlify(db: NetlifyDb, sql: string, params: unknown[] = []) {
+  const errors: unknown[] = [];
 
-function parseJsonb(data: unknown): AppState | null {
-  try {
-    const v = typeof data === "string" ? JSON.parse(data) : data;
-    if (v && typeof v === "object" && (v as AppState).settings && Array.isArray((v as AppState).plProducts)) {
-      return pickState(v as AppState);
+  if (typeof db.httpClient?.query === "function") {
+    try {
+      const result = await db.httpClient.query(sql, params, { fullResults: true, arrayMode: false });
+      return { rows: normalizeQueryRows(result) };
+    } catch (e) {
+      errors.push(e);
     }
-  } catch {
-    /* empty */
   }
-  return null;
+
+  if (typeof db.pool?.query === "function") {
+    try {
+      const result = await db.pool.query(sql, params);
+      return { rows: normalizeQueryRows(result) };
+    } catch (e) {
+      errors.push(e);
+    }
+  }
+
+  if (typeof db.sql?.unsafe === "function") {
+    try {
+      const result = await db.sql.unsafe(sql, params, { rowMode: "object" });
+      return { rows: normalizeQueryRows(result) };
+    } catch (e) {
+      errors.push(e);
+    }
+  }
+
+  const first = errors[0];
+  throw first instanceof Error ? first : new Error(publicError(first ?? "no database query method"));
 }
 
 async function openDb(): Promise<DbHandle | null> {
@@ -109,14 +142,19 @@ async function openDb(): Promise<DbHandle | null> {
   if (netlifyish) {
     try {
       const { getDatabase } = await import("@netlify/database");
-      const url = envConnectionString();
-      const db = url ? getDatabase({ connectionString: url }) : getDatabase();
+      // Runtime `getDatabase()` resolves the current deploy's branch URL.
+      // Only pass process.env as a fallback (EasyPanel / local Netlify CLI).
+      let db: NetlifyDb;
+      try {
+        db = getDatabase() as NetlifyDb;
+      } catch (e) {
+        const url = envConnectionString();
+        if (!url) throw e;
+        db = getDatabase({ connectionString: url }) as NetlifyDb;
+      }
       const handle: DbHandle = {
         backend: "netlify-db",
-        query: async (sql, params = []) => {
-          const rows = await db.sql.unsafe(sql, params);
-          return { rows: asRows(rows) };
-        },
+        query: (sql, params = []) => queryNetlify(db, sql, params),
       };
       cachedDb = handle;
       return handle;
@@ -139,7 +177,7 @@ async function openDb(): Promise<DbHandle | null> {
         backend: netlifyish ? "netlify-db" : "postgres",
         query: async (sql, params = []) => {
           const r = await pool.query(sql, params);
-          return { rows: asRows(r.rows) };
+          return { rows: normalizeQueryRows(r) };
         },
       };
       cachedDb = handle;
@@ -157,7 +195,7 @@ async function ensureSchema(db: DbHandle) {
   if (!schemaReady) {
     schemaReady = (async () => {
       await db.query(`
-        CREATE TABLE IF NOT EXISTS workspaces (
+        CREATE TABLE IF NOT EXISTS public.workspaces (
           id TEXT PRIMARY KEY,
           data JSONB NOT NULL,
           updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -165,9 +203,9 @@ async function ensureSchema(db: DbHandle) {
       `);
       try {
         await db.query(`
-          INSERT INTO workspaces (id, data, updated_at)
+          INSERT INTO public.workspaces (id, data, updated_at)
           SELECT 'default', data, COALESCE(updated_at, now())
-          FROM app_state
+          FROM public.app_state
           WHERE id = 1
           ON CONFLICT (id) DO NOTHING
         `);
@@ -227,25 +265,18 @@ export async function loadStateRecord(workspaceRaw?: string): Promise<StateRecor
   const db = await openDb();
   if (db) {
     await ensureSchema(db);
-    const r = await db.query("SELECT data, updated_at FROM workspaces WHERE id = $1", [workspace]);
-    const row = r.rows[0];
-    if (row) {
-      const state = parseJsonb(row.data);
-      if (state) {
-        return {
-          state,
-          empty: false,
-          backend: db.backend,
-          updatedAt: row.updated_at ? String(row.updated_at) : null,
-          workspace,
-        };
-      }
+    const r = await db.query("SELECT data, updated_at FROM public.workspaces WHERE id = $1 LIMIT 1", [
+      workspace,
+    ]);
+    const rec = workspaceRecordFromRows(r.rows, pickState, SEED);
+    if (rec.corrupt) {
+      throw new Error("workspaces.data is present but is not valid app state");
     }
     return {
-      state: pickState(SEED),
-      empty: true,
+      state: rec.state ?? pickState(SEED),
+      empty: rec.empty,
       backend: db.backend,
-      updatedAt: null,
+      updatedAt: rec.updatedAt,
       workspace,
     };
   }
@@ -288,7 +319,7 @@ export async function saveState(state: AppState, workspaceRaw?: string) {
   if (db) {
     await ensureSchema(db);
     await db.query(
-      `INSERT INTO workspaces (id, data, updated_at)
+      `INSERT INTO public.workspaces (id, data, updated_at)
        VALUES ($1, $2::jsonb, now())
        ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()`,
       [workspace, JSON.stringify(data)]

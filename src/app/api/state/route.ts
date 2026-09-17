@@ -5,6 +5,16 @@ import type { AppState } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const NO_STORE = {
+  "Cache-Control": "private, no-store, no-cache, must-revalidate",
+  Pragma: "no-cache",
+};
+
+function json(body: unknown, status = 200) {
+  return NextResponse.json(body, { status, headers: NO_STORE });
+}
 
 function workspaceFrom(req: Request) {
   const url = new URL(req.url);
@@ -26,12 +36,12 @@ export async function GET(req: Request) {
     const workspace = workspaceFrom(req);
     const rec = await loadStateRecord(workspace);
     if (!isDurableBackend(rec.backend)) {
-      return NextResponse.json(
+      return json(
         { ok: false, empty: true, backend: rec.backend, workspace, error: "database unavailable" },
-        { status: 503 }
+        503
       );
     }
-    return NextResponse.json({
+    return json({
       state: rec.state,
       empty: rec.empty,
       backend: rec.backend,
@@ -40,7 +50,7 @@ export async function GET(req: Request) {
     });
   } catch (e) {
     const message = e instanceof Error ? e.message.replace(/(postgres(?:ql)?:\/\/)[^\s'"]+/gi, "$1***") : "db";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return json({ ok: false, error: message }, 500);
   }
 }
 
@@ -49,19 +59,16 @@ export async function PUT(req: Request) {
     const workspace = workspaceFrom(req);
     const rec = await loadStateRecord(workspace);
     if (!isDurableBackend(rec.backend)) {
-      return NextResponse.json(
-        { ok: false, backend: rec.backend, error: "database unavailable" },
-        { status: 503 }
-      );
+      return json({ ok: false, backend: rec.backend, error: "database unavailable" }, 503);
     }
     const state = bodyState(await req.json());
     if (!state) {
-      return NextResponse.json({ ok: false, error: "invalid state" }, { status: 400 });
+      return json({ ok: false, error: "invalid state" }, 400);
     }
     await saveState(state, workspace);
-    return NextResponse.json({ ok: true, workspace, backend: rec.backend });
+    return json({ ok: true, workspace, backend: rec.backend });
   } catch (e) {
     const message = e instanceof Error ? e.message.replace(/(postgres(?:ql)?:\/\/)[^\s'"]+/gi, "$1***") : "db";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return json({ ok: false, error: message }, 500);
   }
 }
