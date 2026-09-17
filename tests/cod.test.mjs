@@ -105,6 +105,28 @@ test("plCollectedSales uses unit price × delivered when set", () => {
   assert.ok(c.profit < 161000 / 245, "profit should be below revenue in USD");
 });
 
+test("Algeria sheet: ads spend stays USD (not ÷ FX)", () => {
+  const p = {
+    id: "x",
+    region: "algeria",
+    name: "kora",
+    productCost: 1000,
+    leads: 0,
+    orders: 90,
+    delivered: 70,
+    totalSales: 161000,
+    sellPricePerDelivered: 0,
+    adsSpend: 100,
+    testSpend: 10,
+    adAccount: 0,
+    bonus: 0,
+    currency: "DZD",
+  };
+  const withAds = calcPl(p, DEFAULT_GULF_FEES, 245, true);
+  const noAds = calcPl({ ...p, adsSpend: 0, testSpend: 0 }, DEFAULT_GULF_FEES, 245, true);
+  assert.ok(Math.abs(withAds.totalCost - noAds.totalCost - 110) < 0.01, "ads+test add $110 not DZD÷FX");
+});
+
 const baseSettings = {
   usdToDzd: 245,
   algeriaConfirm: 0.48,

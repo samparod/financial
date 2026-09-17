@@ -271,19 +271,20 @@ function plMoneyToUsd(n: number, fxToDzd: number, sheetInDzd: boolean) {
 }
 
 export function calcPl(p: PlProduct, fees: Fees, fxToDzd = 0, sheetInDzd = false) {
-  const usd = (n: number) => plMoneyToUsd(n, fxToDzd, sheetInDzd);
+  const dzd = (n: number) => plMoneyToUsd(n, fxToDzd, sheetInDzd);
   const salesLocal = plCollectedSales(p);
-  const sales = usd(salesLocal);
-  const product = usd(p.productCost) * p.delivered;
+  const sales = dzd(salesLocal);
+  const product = dzd(p.productCost) * p.delivered;
   const cos = costOfService(p.leads, p.orders, p.delivered, sales, fees);
   const service = cos.total;
+  // Algeria sheet: sales & product cost in DZD; ads / test / ad account always USD (like the Excel sheet).
   const totalCost =
-    usd(p.adsSpend) +
-    usd(p.testSpend) +
-    usd(p.adAccount) +
+    p.adsSpend +
+    p.testSpend +
+    p.adAccount +
     product +
     service +
-    usd(p.bonus);
+    dzd(p.bonus);
   const profit = sales - totalCost;
   const epo = p.orders > 0 ? profit / p.orders : 0;
   const epd = p.delivered > 0 ? profit / p.delivered : 0;
@@ -299,9 +300,9 @@ export function calcPl(p: PlProduct, fees: Fees, fxToDzd = 0, sheetInDzd = false
     epd: round2(epd),
     confirmRate,
     deliveredRate,
-    adsPerOrder: p.orders > 0 ? round2(usd(p.adsSpend) / p.orders) : 0,
-    testPerOrder: p.orders > 0 ? round2(usd(p.testSpend) / p.orders) : 0,
-    adAccPerOrder: p.orders > 0 ? round2(usd(p.adAccount) / p.orders) : 0,
+    adsPerOrder: p.orders > 0 ? round2(p.adsSpend / p.orders) : 0,
+    testPerOrder: p.orders > 0 ? round2(p.testSpend / p.orders) : 0,
+    adAccPerOrder: p.orders > 0 ? round2(p.adAccount / p.orders) : 0,
     productPerOrder: p.orders > 0 ? round2(product / p.orders) : 0,
     servicePerOrder: p.orders > 0 ? round2(service / p.orders) : 0,
   };

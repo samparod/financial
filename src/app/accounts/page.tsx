@@ -107,6 +107,8 @@ export default function AccountsPage() {
   const moneySuffix = useDzd ? "د.ج" : undefined;
   const showMoney = (usd: number, digits = 2) =>
     useDzd ? money(usd * fx, "DZD", digits === 0 ? 0 : 2) : money(usd, PL_CUR, digits);
+  /** Rows stored in USD on the Algeria sheet (ads, service fees from settings). */
+  const showUsd = (usd: number, digits = 2) => money(usd, PL_CUR, digits === 0 ? 0 : digits);
 
   const stockFor = (p: PlProduct) =>
     p.stockItemId ? regionStock.find((x) => x.id === p.stockItemId) : undefined;
@@ -302,16 +304,13 @@ export default function AccountsPage() {
                     <CellInput
                       value={p[f.key] as number}
                       step={0.01}
-                      moneyPrefix={!useDzd}
-                      moneySuffix={useDzd ? moneySuffix : undefined}
+                      moneyPrefix
                       onChange={(n) => set(p, { [f.key]: n })}
                     />
                   </td>
                 ))}
                 <td className="p-2 text-center tabular-nums" dir="ltr">
-                  {useDzd
-                    ? money(rows.reduce((a, p) => a + (p[f.key] as number), 0), "DZD", 0)
-                    : money(rows.reduce((a, p) => a + (p[f.key] as number), 0), PL_CUR)}
+                  {money(rows.reduce((a, p) => a + (p[f.key] as number), 0), PL_CUR)}
                 </td>
               </tr>
             ))}
@@ -327,27 +326,27 @@ export default function AccountsPage() {
                 <Calc
                   label={<LabelHelp id="sheet.leadFee">{t("sheet.leadFee")}</LabelHelp>}
                   values={calcs.map((c) => c.cos.lead)}
-                  formatUsd={showMoney}
+                  formatUsd={useDzd ? showUsd : undefined}
                 />
                 <Calc
                   label={<LabelHelp id="sheet.confirmFee">{t("sheet.confirmFee")}</LabelHelp>}
                   values={calcs.map((c) => c.cos.confirm)}
-                  formatUsd={showMoney}
+                  formatUsd={useDzd ? showUsd : undefined}
                 />
                 <Calc
                   label={<LabelHelp id="sheet.deliverFee">{t("sheet.deliverFee")}</LabelHelp>}
                   values={calcs.map((c) => c.cos.delivered)}
-                  formatUsd={showMoney}
+                  formatUsd={useDzd ? showUsd : undefined}
                 />
                 <Calc
                   label={<LabelHelp id="sheet.extraFee">{t("sheet.extraFee")}</LabelHelp>}
                   values={calcs.map((c) => c.cos.extra)}
-                  formatUsd={showMoney}
+                  formatUsd={useDzd ? showUsd : undefined}
                 />
                 <Calc
                   label={<LabelHelp id="sheet.codFee">{t("sheet.codFee")}</LabelHelp>}
                   values={calcs.map((c) => c.cos.cod)}
-                  formatUsd={showMoney}
+                  formatUsd={useDzd ? showUsd : undefined}
                 />
               </>
             )}
@@ -356,7 +355,7 @@ export default function AccountsPage() {
               label={<LabelHelp id="sheet.serviceCost">{t("sheet.serviceCost")}</LabelHelp>}
               values={calcs.map((c) => c.service)}
               className="font-bold"
-              formatUsd={showMoney}
+              formatUsd={useDzd ? showUsd : undefined}
             />
 
             <tr className="border-t border-line">
@@ -424,17 +423,17 @@ export default function AccountsPage() {
             <Calc
               label={<LabelHelp id="sheet.ads">{t("sheet.ads")}</LabelHelp>}
               values={calcs.map((c) => c.adsPerOrder)}
-              formatUsd={showMoney}
+              formatUsd={useDzd ? showUsd : undefined}
             />
             <Calc
               label={<LabelHelp id="sheet.test">{t("sheet.test")}</LabelHelp>}
               values={calcs.map((c) => c.testPerOrder)}
-              formatUsd={showMoney}
+              formatUsd={useDzd ? showUsd : undefined}
             />
             <Calc
               label={<LabelHelp id="sheet.adAccount">{t("sheet.adAccount")}</LabelHelp>}
               values={calcs.map((c) => c.adAccPerOrder)}
-              formatUsd={showMoney}
+              formatUsd={useDzd ? showUsd : undefined}
             />
             <Calc
               label={<LabelHelp id="sheet.productLine">{t("sheet.productLine")}</LabelHelp>}
@@ -444,7 +443,7 @@ export default function AccountsPage() {
             <Calc
               label={<LabelHelp id="sheet.serviceCost">{t("sheet.serviceCost")}</LabelHelp>}
               values={calcs.map((c) => c.servicePerOrder)}
-              formatUsd={showMoney}
+              formatUsd={useDzd ? showUsd : undefined}
             />
             <Calc
               label={<LabelHelp id="sheet.epo">{t("sheet.epo")}</LabelHelp>}
