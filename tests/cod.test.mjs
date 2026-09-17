@@ -11,6 +11,8 @@ import {
   plCollectedSales,
   plLinkedStockValueUsd,
   calcPl,
+  calcAlgeriaSim,
+  calcGulfSim,
   DEFAULT_PRICING,
   DEFAULT_GULF_FEES,
 } from "../src/lib/cod.ts";
@@ -125,6 +127,43 @@ test("linked stock value uses sheet product cost on Algeria tab", () => {
   const item = { id: "st", region: "algeria", qty: 100, unitCostUsd: 4.9, name: "kora" };
   const usd = plLinkedStockValueUsd(p, item, 245, true);
   assert.ok(Math.abs(usd * 245 - 100000) < 1, "100 × 1000 DZD, not unitCostUsd from inventory");
+});
+
+test("Algeria sim uses Cost of Service + local ship, not Gulf flat shipping", () => {
+  const gulfFees = { ...DEFAULT_GULF_FEES };
+  const dzFees = {
+    leadFee: 0.3,
+    confirmFee: 0.6,
+    extraPerConfirm: 0,
+    deliveredFee: 1.2,
+    codPercent: 0.04,
+  };
+  const base = {
+    leads: 100,
+    productCostDzd: 1000,
+    sellPriceDzd: 5000,
+    confirmationRate: 0.5,
+    deliveredRate: 0.5,
+    cplUsd: 2,
+    fxToDzd: 245,
+    deliveryDzd: 500,
+    returnDzd: 300,
+    callCenterDzdPerConfirm: 0,
+  };
+  const dz = calcAlgeriaSim({ ...base, fees: dzFees });
+  const gulf = calcGulfSim({
+    leads: 100,
+    productCost: 1000 / 245,
+    confirmationRate: 0.5,
+    deliveredRate: 0.5,
+    cpl: 2,
+    aov: 5000 / 245,
+    shippingPerConfirmed: 8,
+    fees: gulfFees,
+  });
+  assert.notEqual(dz.profit, gulf.profit);
+  assert.ok(dz.shipping > 0, "local DZD logistics");
+  assert.ok(dz.callCenter > 0, "platform line from costOfService");
 });
 
 test("Algeria sheet: ads spend stays USD (not ÷ FX)", () => {

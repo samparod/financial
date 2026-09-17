@@ -227,6 +227,65 @@ export function calcGulfSim(s: SimInput) {
   };
 }
 
+/** Algeria simulator — not Gulf: local DZD logistics + sheet Cost of Service (algeriaFeesUsd). */
+export interface AlgeriaSimInput {
+  leads: number;
+  productCostDzd: number;
+  sellPriceDzd: number;
+  confirmationRate: number;
+  deliveredRate: number;
+  cplUsd: number;
+  fxToDzd: number;
+  deliveryDzd: number;
+  returnDzd: number;
+  callCenterDzdPerConfirm: number;
+  fees: Fees;
+}
+
+export function calcAlgeriaSim(s: AlgeriaSimInput) {
+  const fx = Math.max(s.fxToDzd, 1);
+  const dzdToUsd = (dzd: number) => dzd / fx;
+  const confirmed = s.leads * s.confirmationRate;
+  const delivered = confirmed * s.deliveredRate;
+  const sales = delivered * dzdToUsd(s.sellPriceDzd);
+  const productSold = delivered * dzdToUsd(s.productCostDzd);
+  const ads = s.leads * s.cplUsd;
+
+  const localShipping =
+    (delivered * s.deliveryDzd + (confirmed - delivered) * s.returnDzd) / fx;
+
+  const feesWithCc: Fees = {
+    ...s.fees,
+    confirmFee: s.fees.confirmFee + dzdToUsd(s.callCenterDzdPerConfirm),
+  };
+  const cos = costOfService(s.leads, confirmed, delivered, sales, feesWithCc);
+  const platformOps = cos.lead + cos.confirm + cos.delivered + cos.extra;
+  const service = localShipping + cos.total;
+  const profit = sales - service - ads - productSold;
+  const invest = ads + productSold;
+  const epd = delivered > 0 ? profit / delivered : 0;
+  const roi = invest > 0 ? profit / invest : 0;
+  const margin = sales > 0 ? profit / sales : 0;
+
+  return {
+    confirmed: round2(confirmed),
+    delivered: round2(delivered),
+    sales: round2(sales),
+    shipping: round2(localShipping),
+    callCenter: round2(platformOps),
+    cod: cos.cod,
+    ads: round2(ads),
+    productSold: round2(productSold),
+    service: round2(service),
+    cos,
+    profit: round2(profit),
+    invest: round2(invest),
+    epd: round2(epd),
+    roi: round2(roi),
+    margin: round2(margin),
+  };
+}
+
 /** Excel: Lead×0.5 + Order×1 + Delivered×2 + Order×3.99 + Sales×5% */
 export function costOfService(
   leads: number,

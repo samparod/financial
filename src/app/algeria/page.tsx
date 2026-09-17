@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { calcGulfSim, calcPl, plCollectedSales } from "@/lib/cod";
+import { calcAlgeriaSim, calcPl, plCollectedSales } from "@/lib/cod";
 import { useCod } from "@/lib/store";
 import { money, pct } from "@/lib/format";
 import { Badge, Kpi, Num, PageHead } from "@/components/ui";
@@ -72,32 +72,22 @@ export default function AlgeriaPage() {
     patchSettings({ algeriaDelivered: n });
   };
 
-  const shippingPerConfirmed = useMemo(
-    () => (dr * deliveryDzd + (1 - dr) * returnDzd) / Math.max(fx, 1),
-    [dr, deliveryDzd, returnDzd, fx]
-  );
-
-  const simFees = useMemo(
-    () => ({
-      ...fees,
-      confirmFee: fees.confirmFee + callDzd / Math.max(fx, 1),
-    }),
-    [fees, callDzd, fx]
-  );
-
   const r = useMemo(
     () =>
-      calcGulfSim({
+      calcAlgeriaSim({
         leads,
-        productCost: productCostDzd / Math.max(fx, 1),
+        productCostDzd,
+        sellPriceDzd: aovDzd,
         confirmationRate: cr,
         deliveredRate: dr,
-        cpl,
-        aov: aovDzd / Math.max(fx, 1),
-        shippingPerConfirmed,
-        fees: simFees,
+        cplUsd: cpl,
+        fxToDzd: fx,
+        deliveryDzd,
+        returnDzd,
+        callCenterDzdPerConfirm: callDzd,
+        fees,
       }),
-    [leads, productCostDzd, cr, dr, cpl, aovDzd, fx, shippingPerConfirmed, simFees]
+    [leads, productCostDzd, aovDzd, cr, dr, cpl, fx, deliveryDzd, returnDzd, callDzd, fees]
   );
 
   const dzdHint = (usd: number) => money(usd * fx, "DZD", 0);
@@ -119,7 +109,7 @@ export default function AlgeriaPage() {
       <PageHead
         kicker="ALGERIA · USD + DZD"
         title={t("dz.title")}
-        desc={t("sheet.formula")}
+        desc={t("dz.simFormula")}
         extra={<Badge tone="gold">{t("dz.fxBadge", { fx })}</Badge>}
       />
 
@@ -187,8 +177,8 @@ export default function AlgeriaPage() {
             help="gulf.sales"
           />
           <Kpi label="EPD" value={money(r.epd)} tone={epdTone} hint={dzdHint(r.epd)} help="dz.epd" />
-          <Kpi label={t("gulf.shipping")} value={money(r.shipping)} hint={dzdHint(r.shipping)} help="gulf.shipping" />
-          <Kpi label={t("gulf.callCenter")} value={money(r.callCenter)} hint={dzdHint(r.callCenter)} help="gulf.callCenter" />
+          <Kpi label={t("dz.localShip")} value={money(r.shipping)} hint={dzdHint(r.shipping)} help="dz.delivery" />
+          <Kpi label={t("dz.platformFees")} value={money(r.callCenter)} hint={dzdHint(r.callCenter)} help="sheet.serviceCost" />
           <Kpi label={codLabel} value={money(r.cod)} hint={dzdHint(r.cod)} help="gulf.cod" />
           <Kpi label={t("gulf.ads")} value={money(r.ads)} hint={dzdHint(r.ads)} help="gulf.ads" />
           <Kpi label={t("gulf.productSold")} value={money(r.productSold)} hint={dzdHint(r.productSold)} help="gulf.productSold" />
