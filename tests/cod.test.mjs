@@ -15,6 +15,7 @@ import {
   calcGulfSim,
   DEFAULT_PRICING,
   DEFAULT_GULF_FEES,
+  weightedUnitCost,
 } from "../src/lib/cod.ts";
 
 function item(over = {}) {
@@ -240,4 +241,10 @@ test("migration fills a half-written pricing object", () => {
   const out = migrateSettings({ pricing: { targetProfitUsd: 12 } }, baseSettings);
   assert.equal(out.pricing.targetProfitUsd, 12);
   assert.equal(out.pricing.codPercent, DEFAULT_PRICING.codPercent, "gap must be filled, not left undefined");
+});
+
+test("weightedUnitCost averages old stock with the new landed shipment", () => {
+  assert.equal(weightedUnitCost(100, 8, 100, 10), 9);
+  assert.equal(weightedUnitCost(0, 8, 50, 10), 10);
+  assert.equal(weightedUnitCost(50, 4, 0, 99), 4);
 });

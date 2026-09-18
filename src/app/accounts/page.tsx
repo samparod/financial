@@ -148,7 +148,7 @@ export default function AccountsPage() {
   return (
     <div className="lg:p-8">
       <PageHead
-        kicker="PROFIT & LOST"
+        kicker="PROFIT & LOSS"
         title={t("sheet.title")}
         desc={t("sheet.desc")}
         extra={
@@ -373,7 +373,9 @@ export default function AccountsPage() {
                 </td>
               ))}
               <td className="p-2 text-center" dir="ltr">
-                {money(rows.reduce((a, p) => a + p.bonus, 0), PL_CUR)}
+                {useDzd
+                  ? money(rows.reduce((a, p) => a + p.bonus, 0), "DZD", 0)
+                  : money(rows.reduce((a, p) => a + p.bonus, 0), PL_CUR)}
               </td>
             </tr>
 

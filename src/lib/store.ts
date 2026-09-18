@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SEED } from "./seed";
-import { landedCost, migrateSettings } from "./cod";
+import { landedCost, migrateSettings, weightedUnitCost } from "./cod";
 import { LOCAL_STATE_KEY } from "./state-io";
 import type {
   AlibabaShipment,
@@ -182,7 +182,7 @@ export const useCod = create<Store>()(
                   ? {
                       ...x,
                       qty: x.qty + ship.qty,
-                      unitCostUsd: L.perUnit,
+                      unitCostUsd: weightedUnitCost(x.qty, x.unitCostUsd, ship.qty, L.perUnit),
                       updatedAt: new Date().toISOString().slice(0, 10),
                     }
                   : x

@@ -325,6 +325,15 @@ export function stockValueAtCost(item: StockItem) {
   return round2(Math.max(0, item.qty) * Math.max(0, item.unitCostUsd));
 }
 
+/** Weighted-average unit cost when a new shipment lands on an existing SKU. */
+export function weightedUnitCost(oldQty: number, oldUnit: number, addQty: number, addUnit: number) {
+  const q0 = Math.max(0, oldQty);
+  const q1 = Math.max(0, addQty);
+  const total = q0 + q1;
+  if (total <= 0) return round2(Math.max(0, addUnit));
+  return round2((Math.max(0, oldUnit) * q0 + Math.max(0, addUnit) * q1) / total);
+}
+
 /** P&L linked stock: same unit cost as the sheet row (DZD on Algeria tab), not inventory page USD. */
 export function plLinkedStockValueUsd(
   p: PlProduct,

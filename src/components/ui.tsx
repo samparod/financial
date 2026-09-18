@@ -144,15 +144,15 @@ export function Btn({
   tone?: "ghost" | "gold" | "danger";
 }) {
   const map = {
-    ghost: "border-line text-mute hover:text-white",
-    gold: "border-gold/40 bg-gold/15 text-gold",
-    danger: "border-danger/40 text-danger",
+    ghost: "border-line text-mute hover:text-white hover:border-white/20",
+    gold: "border-gold/40 bg-gold/15 text-gold hover:bg-gold/25",
+    danger: "border-danger/40 text-danger hover:bg-danger/10",
   };
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cls("border rounded-lg px-3 py-1.5 text-sm", map[tone])}
+      className={cls("border rounded-lg px-3 py-1.5 text-sm transition-colors", map[tone])}
     >
       {children}
     </button>

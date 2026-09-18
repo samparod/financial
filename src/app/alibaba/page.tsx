@@ -60,6 +60,15 @@ export default function AlibabaPage() {
         </div>
       )}
 
+      {list.length === 0 && (
+        <div className="card p-8 text-center">
+          <p className="text-sm text-mute mb-4">{t("ab.empty")}</p>
+          <Btn tone="gold" onClick={() => s.addShip(region === "algeria" ? "algeria" : "gulf")}>
+            {t("common.addShip")}
+          </Btn>
+        </div>
+      )}
+
       <div className="space-y-4">
         {list.map((ship) => {
           const L = landedCost(ship);
@@ -85,6 +94,7 @@ export default function AlibabaPage() {
                 <TextField label={t("ab.product")} value={ship.productName} onChange={(v) => s.setShip(ship.id, { productName: v })} help="ab.product" />
                 <TextField label={t("ab.supplier")} value={ship.supplier} onChange={(v) => s.setShip(ship.id, { supplier: v })} help="ab.supplier" />
                 <AlibabaUrlField
+                  className="col-span-2"
                   label={t("ab.url")}
                   value={ship.alibabaUrl}
                   onChange={(v) => s.setShip(ship.id, { alibabaUrl: v })}

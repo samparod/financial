@@ -110,7 +110,7 @@ export default function WinnersPage() {
                 <Num label={t("win.weight")} value={w.weightKg} onChange={(n) => s.setWinner(w.id, { weightKg: n })} step={0.01} help="win.weight" />
                 <AlibabaUrlField
                   className="col-span-2"
-                  label={t("ab.url")}
+                  label={t("win.url")}
                   value={w.alibabaUrl}
                   onChange={(v) => s.setWinner(w.id, { alibabaUrl: v })}
                   help="win.url"
